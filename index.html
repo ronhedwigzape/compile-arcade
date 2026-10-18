@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Compiler Arcade: Midterm Quest (Expert Edition) | PLC Course</title>
+  <title>Compiler Arcade: Lexer to AST Quest | PLC Midterm Review</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -80,7 +80,7 @@
     .hud-stats {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       flex-wrap: wrap;
     }
 
@@ -127,11 +127,11 @@
       padding: 34px 38px;
       box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
       position: relative;
-      animation: fadeSlide 0.3s ease-out;
+      animation: fadeSlide 0.28s ease-out;
     }
 
     @keyframes fadeSlide {
-      from { opacity: 0; transform: translateY(12px); }
+      from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
@@ -140,7 +140,7 @@
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 14px;
-      margin: 18px 0 24px;
+      margin: 16px 0 24px;
     }
 
     .diff-card {
@@ -183,7 +183,7 @@
     }
 
     .diff-card h3 { font-size: 1.08rem; font-weight: 800; margin-bottom: 6px; }
-    .diff-card p { font-size: 0.82rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 10px; }
+    .diff-card p { font-size: 0.82rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 12px; }
     .diff-meta {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.74rem;
@@ -261,20 +261,20 @@
       font-weight: 900;
     }
 
-    /* PIPELINE PROGRESS BAR */
+    /* 3-STAGE PIPELINE PROGRESS BAR (UP TO AST ONLY) */
     .stage-progress {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
       margin-bottom: 22px;
     }
 
     .stage-step {
       background: rgba(16, 23, 38, 0.75);
       border: 1px solid var(--border);
-      padding: 10px 14px;
+      padding: 12px 16px;
       border-radius: 12px;
-      font-size: 0.82rem;
+      font-size: 0.85rem;
       font-weight: 700;
       color: var(--text-muted);
       display: flex;
@@ -323,7 +323,7 @@
       border-radius: 14px;
       padding: 18px 22px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.96rem;
+      font-size: 0.95rem;
       line-height: 1.6;
       color: #e2e8f0;
       margin: 14px 0 20px;
@@ -334,7 +334,7 @@
 
     /* STAGE 1: COIN SORTER (LEXER) BUCKETS */
     .token-tray {
-      min-height: 76px;
+      min-height: 78px;
       background: rgba(6, 9, 17, 0.8);
       border: 2px dashed var(--border);
       border-radius: 14px;
@@ -377,7 +377,7 @@
 
     /* STAGE 3: AST ORG CHART VISUALIZER */
     .ast-diagram {
-      background: rgba(6, 9, 17, 0.75);
+      background: rgba(6, 9, 17, 0.78);
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 24px;
@@ -385,19 +385,19 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 18px;
+      gap: 14px;
     }
 
     .ast-row {
       display: flex;
       justify-content: center;
-      gap: 32px;
+      gap: 28px;
       width: 100%;
       flex-wrap: wrap;
     }
 
     .ast-slot {
-      min-width: 190px;
+      min-width: 210px;
       padding: 12px 16px;
       border-radius: 12px;
       background: var(--bg-card);
@@ -444,13 +444,14 @@
       text-align: left;
       color: var(--text-main);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.88rem;
-      line-height: 1.45;
+      font-size: 0.86rem;
+      line-height: 1.5;
       cursor: pointer;
       transition: all 0.15s ease;
+      white-space: pre-wrap;
     }
 
-    .option-btn:hover {
+    .option-btn:hover:not(:disabled) {
       border-color: var(--cyan);
       background: rgba(56, 189, 248, 0.1);
     }
@@ -520,7 +521,7 @@
   <header class="hud-bar">
     <div class="brand">
       <span class="brand-badge">PLC · MIDTERM ARCADE</span>
-      <span>Rule Engine Compiler Quest</span>
+      <span>Lexer to AST Compiler Quest</span>
     </div>
 
     <div class="hud-stats" id="hud-stats" style="display:none;">
@@ -578,6 +579,7 @@
 
     /********************************************************************
      * 2. DIFFICULTY TIERS (INTERN -> JUNIOR -> SENIOR -> EXPERT)
+     *    SCOPED STRICTLY UP TO AST ONLY (STAGES 1, 2, AND 3)
      ********************************************************************/
     const DIFFICULTIES = {
       intern: {
@@ -589,7 +591,7 @@
         lives: 4,
         multiplier: 1.0,
         hintCost: 0,
-        desc: "Weeks 1–2 basics: Core visual analogies (Coin Sorter, Labeled Jars, Org Chart) and simple 3-token rules."
+        desc: "Fundamentals: Coin Sorter (Lexer), Labeled Kitchen Jars (TypeScript), and 2-level Office Org Charts (AST)."
       },
       junior: {
         id: "junior",
@@ -600,7 +602,7 @@
         lives: 3,
         multiplier: 1.5,
         hintCost: 25,
-        desc: "Weeks 3–4 Prelim & TypeScript: Multi-token rules with strings, >= operators, and 2-level AST Org Charts."
+        desc: "Prelim to Week 4 Lab: 7-token rules with strings, tokenize() cursor loops, Token & Comparison interfaces, and OR ASTs."
       },
       senior: {
         id: "senior",
@@ -611,32 +613,36 @@
         lives: 3,
         multiplier: 2.0,
         hintCost: 50,
-        desc: "Weeks 5–6 Midterm Standard: Operator precedence (AND before OR), Chevrotain grammar rules, and bug hunts."
+        desc: "Midterm Standard: Trap tokens, string quote loops, recursive ASTNode unions, and 3-level AND vs OR precedence trees."
       },
       expert: {
         id: "expert",
         name: "Expert Architect",
         icon: "🔥",
         label: "🔥 EXPERT ARCHITECT",
-        timePerQ: 18,
+        timePerQ: 20,
         lives: 2,
         multiplier: 3.0,
         hintCost: 100,
-        desc: "Insane Mode: Trap tokens, 3-level AST precedence vs. parentheses override, Chevrotain $.OR/$.MANY & strict TS unions."
+        desc: "Mastery Mode: 13-token parenthesized rules, Maximal Munch bugs, AST discriminated unions, parentheses override & chaining."
       }
     };
 
     /********************************************************************
-     * 3. QUESTION BANK (SCALED ACROSS ALL 4 DIFFICULTIES & 4 STAGES)
+     * 3. CURATED QUESTION BANK (24 QUESTIONS UP TO AST ONLY)
+     *    - Stage 1: The Lexer (Coin Sorter)
+     *    - Stage 2: TypeScript ("Labeled Jars") & Code Debugging
+     *    - Stage 3: The AST ("Office Org Chart" & Hierarchy)
+     *    (MCQ options are dynamically shuffled on every playthrough!)
      ********************************************************************/
     const QUESTION_BANK = {
-      // ==================== TIER 1: INTERN (EASY) ====================
+      // ==================== TIER 1: INTERN (EASY — 6 QUESTIONS) ====================
       intern: [
         {
           stage: 1,
           type: "lexer-sort",
           kicker: "STAGE 1 · THE LEXER (COIN SORTER)",
-          prompt: "Act as the Lexer (Coin Sorter)! Click the tokens in the exact left-to-right order produced for this Product Filter rule:",
+          prompt: "Act as the Lexer (Coin Sorter)! Click the tokens in exact left-to-right order for this Group 1 (Product Filter) rule:",
           rule: 'price > 100',
           target: [
             { val: "price", type: "FIELD" },
@@ -646,78 +652,93 @@
           distractors: [
             { val: "price > 100", type: "RAW_STRING" }
           ],
-          hint: "Remember Week 2: The Lexer skips spaces and labels the identifier (FIELD), the operator (GT), and the digits (NUMBER)."
+          hint: "The Lexer skips spaces and sorts the field name (FIELD), the operator (GT), and the digits (NUMBER) into separate labeled tokens."
         },
         {
           stage: 1,
           type: "mcq",
-          kicker: "STAGE 1 · COMPILER ANALOGIES",
-          prompt: "In Week 2, why do we compare the Lexer (Tokenizer) to a mechanical Coin Sorter?",
-          code: `Input:  age >= 21\nOutput: [ age : FIELD ] [ >= : GTE ] [ 21 : NUMBER ]`,
+          kicker: "STAGE 1 · COMPILER ANALOGIES (THE LEXER)",
+          prompt: "Why do we compare Step 1 of our compiler—the Lexer (Tokenizer)—to a mechanical Coin Sorter?",
+          code: `Input String:  "price > 100"\nLexer Output:  [ { type: "FIELD", value: "price" }, { type: "GT", value: ">" }, { type: "NUMBER", value: 100 } ]`,
           options: [
-            "Because it sorts raw text characters into labeled token buckets without understanding the full rule yet",
-            "Because it calculates the final true or false boolean answer immediately",
-            "Because it saves rules into MongoDB collections",
-            "Because it arranges comparisons into a hierarchical Org Chart"
+            "Because it breaks raw text into a flat list of labeled token buckets without deciding hierarchy yet",
+            "Because it builds a 3-level corporate Org Chart showing who reports to whom",
+            "Because it connects React directly to MongoDB Atlas",
+            "Because it calculates the final true or false answer of the rule immediately"
           ],
           correct: 0,
-          hint: "A coin sorter drops quarters and dimes into labeled trays—it doesn't decide what to buy yet!"
+          hint: "A coin sorter drops mixed change into labeled trays (FIELD, GT, NUMBER)—it only produces a flat list of tokens!"
         },
         {
           stage: 2,
           type: "mcq",
-          kicker: "STAGE 2 · JAVASCRIPT & TYPESCRIPT (LABELED JARS)",
-          prompt: "In Week 4, we compare TypeScript types to 'Labeled Jars in a Kitchen'. What does this union type prevent?",
-          code: `type TokenType = "NUMBER" | "GT" | "AND";\n\ninterface Token {\n  type: TokenType;\n  value?: number;\n}`,
+          kicker: "STAGE 2 · PRELIM JAVASCRIPT BUG HUNT",
+          prompt: "This hardcoded rule always prints 'Matches!' even when category is 'Books'. What is the bug on Line 3?",
+          code: `1: let price = 150;\n2: let category = "Books";\n3: if (price > 100 && category = "Electronics") {\n4:   console.log("Matches!");\n5: }`,
           options: [
-            "It catches typos like type: 'NUMBR' before you even run the program",
-            "It makes the while-loop in tokenize() run 10x faster in the browser",
-            "It automatically writes the Chevrotain parser without grammar rules",
-            "It connects the React frontend to Express"
+            "Line 3 uses a single '=' (assignment) instead of '===' (comparison), overwriting category to 'Electronics'",
+            "Line 3 should use the word 'AND' instead of '&&' inside a standard JavaScript if-statement",
+            "Line 1 should put quotes around 150",
+            "Line 2 cannot store strings inside a let variable"
           ],
           correct: 0,
-          hint: "A jar labeled 'Sugar' stops you from accidentally pouring in salt before baking the cake."
+          hint: "In JavaScript, a single '=' assigns a value (which evaluates as truthy), whereas '===' compares two values!"
+        },
+        {
+          stage: 2,
+          type: "mcq",
+          kicker: "STAGE 2 · TYPESCRIPT (LABELED KITCHEN JARS)",
+          prompt: "In Week 4, we compare TypeScript types to 'Labeled Kitchen Jars'. What does this TokenType union protect us from?",
+          code: `export type TokenType = "FIELD" | "NUMBER" | "STRING" | "GT" | "AND" | "OR";\n\nexport interface Token {\n  type: TokenType;\n  value: string | number;\n}`,
+          options: [
+            "It catches typos like type: 'NUMBR' in the editor before we even run the program",
+            "It automatically draws the AST Org Chart without needing a parser",
+            "It makes the browser skip the Lexer step completely",
+            "It encrypts the rule string inside MongoDB"
+          ],
+          correct: 0,
+          hint: "Just like a kitchen jar labeled 'Sugar' prevents you from pouring in salt, TokenType stops invalid token labels at compile time."
+        },
+        {
+          stage: 3,
+          type: "mcq",
+          kicker: "STAGE 3 · WHY WE NEED AN AST (OFFICE ORG CHART)",
+          prompt: "Once the Lexer gives us a flat array of tokens, why do we still need to build an Abstract Syntax Tree (AST)?",
+          code: `Flat Tokens: [price] [>] [100] [AND] [stock] [>] [0]\nAST Output:  LogicalExpr (AND) -> left: Comparison(price > 100), right: Comparison(stock > 0)`,
+          options: [
+            "A flat list has no hierarchy; the AST acts like an Office Org Chart showing which operator is the Boss and which comparisons report to it",
+            "Because JavaScript arrays cannot hold more than 5 items at a time",
+            "Because the Lexer deletes all field names and numbers",
+            "An AST is only used to style CSS buttons in React"
+          ],
+          correct: 0,
+          hint: "Tokens are just a flat line of words. The AST establishes the reporting hierarchy (Boss node vs. Direct Report nodes)!"
         },
         {
           stage: 3,
           type: "ast-builder",
-          kicker: "STAGE 3 · THE AST (OFFICE ORG CHART)",
-          prompt: "Build the AST Org Chart for this rule! Click a slot in the tree, then click the correct node below:",
+          kicker: "STAGE 3 · BUILD THE AST ORG CHART",
+          prompt: "Build the AST Org Chart for this Group 1 (Product Filter) rule! Click a slot in the tree, then click the matching node:",
           rule: 'price > 100 AND stock > 0',
           layout: "two-level",
           slots: [
-            { role: "TOP BOSS NODE (Root)", answer: "AND" },
-            { role: "LEFT REPORT (Child 1)", answer: "price > 100" },
-            { role: "RIGHT REPORT (Child 2)", answer: "stock > 0" }
+            { role: "TOP BOSS NODE (Root LogicalExpr)", answer: "AND" },
+            { role: "LEFT REPORT (Comparison 1)", answer: "price > 100" },
+            { role: "RIGHT REPORT (Comparison 2)", answer: "stock > 0" }
           ],
           choices: ["AND", "price > 100", "stock > 0", "OR", "100 > price"],
-          hint: "In our Week 4 Org Chart analogy, the logical operator (AND) sits at the top as the Boss, and the two comparisons report underneath it."
-        },
-        {
-          stage: 4,
-          type: "mcq",
-          kicker: "STAGE 4 · CHEVROTAIN PARSER",
-          prompt: "Look at this starter Chevrotain grammar rule from Week 5. What does $.CONSUME(NumberLiteral) do?",
-          code: `$.RULE("comparison", () => {\n  $.CONSUME(Identifier);\n  $.CONSUME(GreaterThan);\n  $.CONSUME(NumberLiteral);\n});`,
-          options: [
-            "It expects and eats one NumberLiteral token (like 100) from the token list",
-            "It converts a string into a MongoDB document",
-            "It deletes all numbers from the computer's memory",
-            "It evaluates whether the comparison is true or false"
-          ],
-          correct: 0,
-          hint: "CONSUME eats one specific token type at the current position in the token stream."
+          hint: "In our Office Org Chart analogy, the logical operator (AND) is the Boss at the top, and the two comparisons report directly underneath it."
         }
       ],
 
-      // ==================== TIER 2: JUNIOR DEV (MEDIUM) ====================
+      // ==================== TIER 2: JUNIOR DEV (MEDIUM — 6 QUESTIONS) ====================
       junior: [
         {
           stage: 1,
           type: "lexer-sort",
-          kicker: "STAGE 1 · MULTI-TOKEN LEXER",
-          prompt: "Tokenize this E-Commerce Client Brief rule in exact order (watch out for quotes and two-character operators!):",
-          rule: 'price >= 250 AND category = "Tech"',
+          kicker: "STAGE 1 · 7-TOKEN PRELIM LEXER",
+          prompt: "Tokenize this Prelim Exam rule in exact left-to-right order (watch out for two-character operators and string quotes!):",
+          rule: 'price >= 250 AND category = "Electronics"',
           target: [
             { val: "price", type: "FIELD" },
             { val: ">=", type: "GTE" },
@@ -725,281 +746,313 @@
             { val: "AND", type: "AND" },
             { val: "category", type: "FIELD" },
             { val: "=", type: "EQ" },
-            { val: "Tech", type: "STRING" }
+            { val: "Electronics", type: "STRING" }
           ],
           distractors: [
             { val: ">", type: "GT" },
-            { val: "Tech", type: "FIELD" }
+            { val: "Electronics", type: "FIELD" }
           ],
-          hint: ">= is a single GTE token, AND is a logical keyword token, and quoted \"Tech\" becomes a STRING token."
+          hint: ">= is a single GTE token, AND is a logical keyword, and quoted \"Electronics\" is labeled as a STRING token (not a FIELD)."
+        },
+        {
+          stage: 1,
+          type: "mcq",
+          kicker: "STAGE 1 · TOKENIZER CURSOR LOGIC",
+          prompt: "In Prelim Part C, you complete the `if (char === '>')` branch inside `tokenize(input)`. Which code block is complete and safe?",
+          code: `while (i < input.length) {\n  const char = input[i];\n  // Complete the '>' branch here:\n}`,
+          options: [
+            "if (char === '>') {\n  tokens.push({ type: 'GT', value: '>' });\n  i++;\n  continue;\n}",
+            "if (char === '>') {\n  tokens.push({ type: 'GT', value: '>' });\n  continue;\n}",
+            "if (char = '>') {\n  return { type: 'GT' };\n}",
+            "if (char === '>') {\n  i = 0;\n  break;\n}"
+          ],
+          correct: 0,
+          hint: "After pushing the GT token, you MUST increment `i++` before `continue` so the loop moves to the next character!"
         },
         {
           stage: 2,
           type: "mcq",
-          kicker: "STAGE 2 · PRELIM BUG HUNT",
-          prompt: "This hardcoded rule from Week 1/3 always prints 'Matches!' even when category is 'Books'. Which line has the bug?",
-          code: `1: let price = 150;\n2: let category = "Books";\n3: if (price > 100 && category = "Electronics") {\n4:   console.log("Matches!");\n5: }`,
+          kicker: "STAGE 2 · TYPESCRIPT UNION INTERFACES",
+          prompt: "In Week 4 TS Lab Task 1, a Token's `value` needs to hold either a field/string (like `'Electronics'`) OR a number (like `250`). Which interface is valid TypeScript?",
+          code: `export type TokenType = "FIELD" | "NUMBER" | "STRING" | "GT" | "GTE" | "EQ" | "AND" | "OR";`,
           options: [
-            "Line 3: Uses single '=' (assignment) instead of '===' (comparison)",
-            "Line 3: Should use 'AND' instead of '&&' in standard JavaScript",
-            "Line 1: 150 should be inside quotes",
-            "Line 4: console.log only prints true values"
+            "export interface Token {\n  type: TokenType;\n  value: string | number;\n}",
+            "export interface Token {\n  type: string && number;\n  value: TokenType;\n}",
+            "export interface Token {\n  type === TokenType;\n  value: [string, number];\n}",
+            "export type Token = TokenType + number;"
           ],
           correct: 0,
-          hint: "In JavaScript, a single '=' overwrites the variable! You need '===' to compare."
+          hint: "In TypeScript, the pipe symbol (`string | number`) is a union type meaning the property can hold a string OR a number."
         },
         {
           stage: 2,
           type: "mcq",
-          kicker: "STAGE 2 · TYPESCRIPT TOKEN INTERFACE",
-          prompt: "Your tokenizer needs to store either a text string OR a number inside token.value. Which TypeScript interface is valid?",
-          code: `export type TokenType = "FIELD" | "NUMBER" | "STRING" | "GT" | "AND";`,
+          kicker: "STAGE 2 · TYPING LEAF COMPARISON NODES",
+          prompt: "In your AST (`ast.ts`), every bottom-level comparison like `income >= 35000` is stored in a `Comparison` node. Which TypeScript interface matches its exact structure?",
+          code: `// Example AST Leaf Node:\n// { type: "Comparison", field: "income", operator: ">=", value: 35000 }`,
           options: [
-            "export interface Token { type: TokenType; value: string | number; }",
-            "export interface Token { type: string && number; value: TokenType; }",
-            "export type Token = [TokenType, boolean];",
-            "interface Token { type === TokenType; value: any[]; }"
+            "interface ComparisonNode {\n  type: 'Comparison';\n  field: string;\n  operator: string;\n  value: string | number;\n}",
+            "interface ComparisonNode {\n  type: 'LogicalExpr';\n  left: string;\n  right: number;\n}",
+            "interface ComparisonNode {\n  tokens: string[];\n  isTrue: boolean;\n}",
+            "interface ComparisonNode {\n  boss: 'AND' | 'OR';\n  value: boolean;\n}"
           ],
           correct: 0,
-          hint: "In TypeScript, the pipe symbol (string | number) means a value can be a string OR a number."
+          hint: "A leaf Comparison node doesn't have `left` or `right` children—it holds `field`, `operator`, and `value`."
         },
         {
           stage: 3,
           type: "ast-builder",
-          kicker: "STAGE 3 · LOAN BRIEF AST ORG CHART",
-          prompt: "Construct the AST Org Chart for Brief 2 (Loan Eligibility Checker):",
+          kicker: "STAGE 3 · GROUP 2 (LOAN ELIGIBILITY) AST ORG CHART",
+          prompt: "Construct the AST Org Chart for this Group 2 (Eligibility Checker) rule:",
           rule: 'income >= 35000 OR creditScore >= 700',
           layout: "two-level",
           slots: [
-            { role: "TOP BOSS NODE (Root)", answer: "OR" },
-            { role: "LEFT REPORT (Child 1)", answer: "income >= 35000" },
-            { role: "RIGHT REPORT (Child 2)", answer: "creditScore >= 700" }
+            { role: "TOP BOSS NODE (Root LogicalExpr)", answer: "OR" },
+            { role: "LEFT REPORT (Comparison 1)", answer: "income >= 35000" },
+            { role: "RIGHT REPORT (Comparison 2)", answer: "creditScore >= 700" }
           ],
           choices: ["OR", "AND", "income >= 35000", "creditScore >= 700", "35000 >= 700"],
-          hint: "The logical connective in this rule is OR, so OR sits at the top of the Org Chart."
+          hint: "The logical connective joining the two comparisons is OR, so OR sits at the top of the Org Chart as the Boss."
         },
         {
-          stage: 4,
+          stage: 3,
           type: "mcq",
-          kicker: "STAGE 4 · CHEVROTAIN SUBRULE",
-          prompt: "In Week 5, when building `andExpression` from two `comparison` rules, when do we use `$.SUBRULE` vs `$.CONSUME`?",
-          code: `$.RULE("andExpression", () => {\n  $.SUBRULE($.comparison);\n  $.CONSUME(And);\n  $.SUBRULE2($.comparison);\n});`,
+          kicker: "STAGE 3 · READING AST JSON OUTPUT",
+          prompt: "For Group 3's Invoice rule `amount <= 5000 AND status = \"Approved\"`, what does the Root (Top Boss) JSON object look like in the AST?",
+          code: `Rule: amount <= 5000 AND status = "Approved"`,
           options: [
-            "$.CONSUME eats a single token from the lexer; $.SUBRULE calls another grammar rule",
-            "$.SUBRULE is only used for numbers; $.CONSUME is only used for strings",
-            "$.CONSUME builds the AST; $.SUBRULE deletes whitespace",
-            "They are completely identical and interchangeable"
+            "{\n  type: 'LogicalExpr',\n  operator: 'AND',\n  left: { type: 'Comparison', field: 'amount', operator: '<=', value: 5000 },\n  right: { type: 'Comparison', field: 'status', operator: '=', value: 'Approved' }\n}",
+            "{\n  type: 'Comparison',\n  field: 'AND',\n  operator: '<=',\n  value: 'Approved'\n}",
+            "[\n  { type: 'FIELD', value: 'amount' },\n  { type: 'AND', value: 'AND' }\n]",
+            "{\n  type: 'LogicalExpr',\n  operator: '<=',\n  left: 'amount',\n  right: 5000\n}"
           ],
           correct: 0,
-          hint: "comparison is another $.RULE, so we invoke it with $.SUBRULE. And is a single Token, so we eat it with $.CONSUME."
+          hint: "The root of a combined rule is a `LogicalExpr` node with `operator: 'AND'`, and its `left` and `right` properties hold the two `Comparison` objects."
         }
       ],
 
-      // ==================== TIER 3: SENIOR DEV (HARD / MIDTERM) ====================
+      // ==================== TIER 3: SENIOR DEV (HARD / MIDTERM — 6 QUESTIONS) ====================
       senior: [
         {
           stage: 1,
           type: "lexer-sort",
-          kicker: "STAGE 1 · DEVOPS ALERT LEXER",
-          prompt: "Tokenize this Brief 5 (Alert Engine) rule. Beware of trap tokens in the pool!",
-          rule: 'cpuLoad > 85 OR status != "idle"',
+          kicker: "STAGE 1 · GROUP 3 INVOICE ROUTER LEXER",
+          prompt: "Tokenize this Group 3 (Invoice Approval) rule. Watch out for trap tokens with wrong labels in the pool!",
+          rule: 'amount >= 10000 OR vendor != "Internal"',
           target: [
-            { val: "cpuLoad", type: "FIELD" },
-            { val: ">", type: "GT" },
-            { val: "85", type: "NUMBER" },
+            { val: "amount", type: "FIELD" },
+            { val: ">=", type: "GTE" },
+            { val: "10000", type: "NUMBER" },
             { val: "OR", type: "OR" },
-            { val: "status", type: "FIELD" },
+            { val: "vendor", type: "FIELD" },
             { val: "!=", type: "NEQ" },
-            { val: "idle", type: "STRING" }
+            { val: "Internal", type: "STRING" }
           ],
           distractors: [
             { val: "OR", type: "FIELD" },
-            { val: "\"idle\"", type: "FIELD" },
+            { val: "Internal", type: "FIELD" },
             { val: "!", type: "NOT" }
           ],
-          hint: "Watch the labels! 'OR' must be typed as OR (not FIELD), '!=' is a single NEQ token, and 'idle' is a STRING."
+          hint: "Check the token types carefully: 'OR' has type OR (not FIELD), '!=' is a single NEQ token, and quoted \"Internal\" is a STRING token."
+        },
+        {
+          stage: 1,
+          type: "mcq",
+          kicker: "STAGE 1 · STRING LITERAL TOKENIZATION LOOP",
+          prompt: "Look at the string-handling block inside `tokenize(input)`. Why is there a second `i++` AFTER the `while` loop finishes?",
+          code: `if (ch === '"' || ch === "'") {\n  const quote = ch;\n  let str = "";\n  i++; // 1st i++ (skips opening quote)\n  while (i < input.length && input[i] !== quote) {\n    str += input[i++];\n  }\n  i++; // <-- Why is this 2nd i++ required?\n  tokens.push({ type: "STRING", value: str });\n  continue;\n}`,
+          options: [
+            "To step past the closing quotation mark so the outer loop doesn't think a brand-new string is starting",
+            "To delete the last letter of the string before pushing the token",
+            "To skip the next token after the string",
+            "To convert the string into a number"
+          ],
+          correct: 0,
+          hint: "The inner while-loop stops when `input[i]` is sitting right on the closing `\"`. Without the second `i++`, the next iteration would see that closing `\"` as a new opening quote!"
         },
         {
           stage: 2,
           type: "mcq",
-          kicker: "STAGE 2 · TOKENIZER INFINITE LOOP BUG",
-          prompt: "When a student tests `tokenize('price > 100')`, their browser tab freezes in an infinite loop! Why?",
-          code: `while (i < input.length) {\n  const char = input[i];\n  if (/\\s/.test(char)) { i++; continue; }\n  if (char === ">") {\n    tokens.push({ type: "GT", value: ">" });\n    continue; // <-- Look closely here!\n  }\n  i++;\n}`,
+          kicker: "STAGE 2 · RECURSIVE AST NODE TYPES",
+          prompt: "In `LogicalExpr`, why must `left` and `right` be typed as `ASTNode` instead of `ComparisonNode`?",
+          code: `export type ASTNode = LogicalExprNode | ComparisonNode;\n\nexport interface LogicalExprNode {\n  type: "LogicalExpr";\n  operator: "AND" | "OR";\n  left: ASTNode;  // Why ASTNode instead of ComparisonNode?\n  right: ASTNode;\n}`,
           options: [
-            "Inside `if (char === '>')`, `continue` runs before `i++`, so `i` stays stuck on '>' forever",
-            "The regular expression `/\\s/` matches numbers instead of spaces",
-            "`tokens.push` resets `i` back to 0 every time it is called",
-            "`while (i < input.length)` should be `while (i <= input.length)`"
+            "Because in a 3+ condition rule (like A OR B AND C), a LogicalExpr Boss can have another LogicalExpr Middle Manager as its child",
+            "Because left and right always store raw numbers like 100",
+            "Because TypeScript does not allow interfaces to reference each other",
+            "Because ComparisonNode is only used in the Lexer"
           ],
           correct: 0,
-          hint: "Every branch that uses `continue` MUST advance the cursor `i++` first, or the loop inspects the exact same character forever!"
+          hint: "Think of the Office Org Chart: a CEO (`OR`) doesn't just manage individual workers (`ComparisonNode`)—they can also manage a Regional Manager (`LogicalExprNode`)!"
+        },
+        {
+          stage: 2,
+          type: "mcq",
+          kicker: "STAGE 2 · TYPESCRIPT COMPILE-TIME AST CHECK",
+          prompt: "Given our strict TypeScript AST definitions from Week 4, why will TypeScript refuse to compile this AST object?",
+          code: `const badTree: ASTNode = {\n  type: "LogicalExpr",\n  operator: "THEN",\n  left: { type: "Comparison", field: "price", operator: ">", value: 100 },\n  right: { type: "Comparison", field: "stock", operator: ">", value: 0 }\n};`,
+          options: [
+            "Because `operator` on a LogicalExpr is restricted to `'AND' | 'OR'`, so `'THEN'` violates the union type",
+            "Because `value: 100` must be written inside quotation marks",
+            "Because `Comparison` nodes cannot be placed inside `left` or `right`",
+            "Because `type` should be `'Token'` instead of `'LogicalExpr'`"
+          ],
+          correct: 0,
+          hint: "Remember the Labeled Kitchen Jars analogy: `operator: 'AND' | 'OR'` only permits `'AND'` or `'OR'`, catching `'THEN'` immediately!"
         },
         {
           stage: 3,
           type: "ast-builder",
           kicker: "STAGE 3 · OPERATOR PRECEDENCE AST (AND vs OR)",
-          prompt: "CRITICAL MIDTERM CONCEPT: Remember that `AND` has higher precedence (binds tighter) than `OR`! Build the 3-level AST Org Chart:",
+          prompt: "CRITICAL MIDTERM CONCEPT: `AND` binds tighter (higher precedence) than `OR`! Build the 3-level AST Org Chart for this rule:",
           rule: 'vip = "Gold" OR price > 100 AND stock > 0',
           layout: "three-level-right",
           slots: [
-            { role: "TOP BOSS (Lowest Precedence)", answer: "OR" },
+            { role: "TOP BOSS (Evaluated Last / Lowest Precedence)", answer: "OR" },
             { role: "LEFT DIRECT REPORT", answer: 'vip = "Gold"' },
             { role: "RIGHT MIDDLE MANAGER (Binds Tighter)", answer: "AND" },
             { role: "AND's LEFT WORKER", answer: "price > 100" },
             { role: "AND's RIGHT WORKER", answer: "stock > 0" }
           ],
           choices: ["OR", "AND", 'vip = "Gold"', "price > 100", "stock > 0"],
-          hint: "Because AND groups first (like multiplication before addition), (price > 100 AND stock > 0) forms a bundle first, and OR sits at the very top as the Root Boss!"
+          hint: "Because AND has higher precedence (like multiplication before addition), `price > 100 AND stock > 0` groups together first under an AND Middle Manager, leaving OR as the Top Boss!"
         },
         {
-          stage: 4,
+          stage: 3,
           type: "mcq",
-          kicker: "STAGE 4 · CHEVROTAIN REPEATED SUBRULES",
-          prompt: "Why does Chevrotain require `$.SUBRULE2($.comparison)` on the second call inside the same grammar rule?",
-          code: `$.RULE("andExpression", () => {\n  $.SUBRULE($.comparison);\n  $.CONSUME(And);\n  $.SUBRULE2($.comparison); // Why the '2'?\n});`,
+          kicker: "STAGE 3 · WHY HIGHER PRECEDENCE SITS LOWER IN THE AST",
+          prompt: "Students often ask: 'If `AND` has higher priority than `OR`, why is `OR` at the very top (Root) of the AST for `A OR B AND C`?'",
+          code: `       [ OR ]          <-- Top Boss (Root)\n       /    \\\n     [A]   [ AND ]     <-- Middle Manager (Grouped First!)\n            /   \\\n          [B]   [C]`,
           options: [
-            "Chevrotain uses numbered suffixes (SUBRULE, SUBRULE2, CONSUME2) to distinguish multiple calls to the same rule during internal lookahead recording",
-            "SUBRULE2 means it consumes two tokens at once instead of one",
-            "SUBRULE2 runs the rule in a background thread",
-            "Without SUBRULE2, TypeScript converts the token into a number"
+            "Higher precedence means `B AND C` binds together first into a tight subtree at the bottom, leaving `OR` as the final outer connector at the top",
+            "Because the parser reads tokens right-to-left instead of left-to-right",
+            "Because `OR` is alphabetically after `AND`",
+            "Because `AND` nodes are not allowed to be the Root of any AST"
           ],
           correct: 0,
-          hint: "When the same rule or token appears more than once in the same $.RULE block, Chevrotain needs numbered calls (1, 2, 3...) to track its internal grammar state."
-        },
-        {
-          stage: 4,
-          type: "mcq",
-          kicker: "STAGE 4 · GRAMMAR PRECEDENCE HIERARCHY",
-          prompt: "In Chevrotain, how do we enforce that `AND` binds tighter (higher precedence) than `OR`?",
-          code: `// How should the rules call each other?`,
-          options: [
-            "orExpression calls $.SUBRULE($.andExpression), and andExpression calls $.SUBRULE($.comparison)",
-            "comparison calls $.SUBRULE($.orExpression), which calls $.CONSUME(Identifier)",
-            "Put all tokens inside a single array in alphabetical order",
-            "Chevrotain automatically knows English word priority without grammar rules"
-          ],
-          correct: 0,
-          hint: "Rules lower in the call chain (closer to the bottom tokens) bind tighter! So `orExpression -> andExpression -> comparison` puts OR at the top of the AST and AND underneath."
+          hint: "In an AST, deeper nodes are grouped most tightly! `B AND C` is bundled first as a unit, and `OR` connects `A` to that unit at the top."
         }
       ],
 
-      // ==================== TIER 4: EXPERT ARCHITECT (INSANE) ====================
+      // ==================== TIER 4: EXPERT ARCHITECT (INSANE — 6 QUESTIONS) ====================
       expert: [
         {
           stage: 1,
           type: "lexer-sort",
-          kicker: "STAGE 1 · EXPERT LEXER WITH PARENTHESES & FLOATS",
-          prompt: "EXPERT CHALLENGE: Tokenize this grouped Formula/Alert DSL rule. Watch out for subtle trap tokens!",
-          rule: '(subtotal >= 499.95 OR vip = "Platinum") AND tax != 0',
+          kicker: "STAGE 1 · EXPERT LEXER: PARENTHESES, FLOATS & TRAPS",
+          prompt: "EXPERT CHALLENGE: Tokenize this 13-token grouped rule in exact order. Beware of subtle trap tokens in the pool!",
+          rule: '(amount >= 5000.50 OR urgent = "true") AND dept != "HR"',
           target: [
             { val: "(", type: "LPAREN" },
-            { val: "subtotal", type: "FIELD" },
+            { val: "amount", type: "FIELD" },
             { val: ">=", type: "GTE" },
-            { val: "499.95", type: "NUMBER" },
+            { val: "5000.50", type: "NUMBER" },
             { val: "OR", type: "OR" },
-            { val: "vip", type: "FIELD" },
+            { val: "urgent", type: "FIELD" },
             { val: "=", type: "EQ" },
-            { val: "Platinum", type: "STRING" },
+            { val: "true", type: "STRING" },
             { val: ")", type: "RPAREN" },
             { val: "AND", type: "AND" },
-            { val: "tax", type: "FIELD" },
+            { val: "dept", type: "FIELD" },
             { val: "!=", type: "NEQ" },
-            { val: "0", type: "NUMBER" }
+            { val: "HR", type: "STRING" }
           ],
           distractors: [
-            { val: "499", type: "NUMBER" },
-            { val: ".95", type: "NUMBER" },
-            { val: "Platinum", type: "FIELD" },
-            { val: ">", type: "GT" }
+            { val: "5000", type: "NUMBER" },
+            { val: ".50", type: "NUMBER" },
+            { val: "true", type: "BOOLEAN" },
+            { val: "HR", type: "FIELD" }
           ],
-          hint: "Parentheses are separate LPAREN/RPAREN tokens, 499.95 is a single decimal NUMBER token, and quotes are stripped from the STRING value."
+          hint: "Parentheses are LPAREN/RPAREN, `5000.50` is a single NUMBER token, and `\"true\"` inside quotes is a STRING token!"
+        },
+        {
+          stage: 1,
+          type: "mcq",
+          kicker: "STAGE 1 · EXPERT LEXER BUG: MAXIMAL MUNCH ORDERING",
+          prompt: "When given `price >= 100`, this buggy tokenizer outputs `[FIELD('price'), GT('>'), EQ('='), NUMBER(100)]` instead of `[FIELD, GTE, NUMBER]`. Why?",
+          code: `if (['>', '<', '='].includes(input[i])) {\n  tokens.push({ type: 'OPERATOR', value: input[i] });\n  i++; continue;\n}\nconst two = input.slice(i, i + 2);\nif (['>=', '<=', '==', '!='].includes(two)) {\n  tokens.push({ type: 'OPERATOR', value: two });\n  i += 2; continue;\n}`,
+          options: [
+            "1-character operators (`>`) are checked BEFORE 2-character operators (`>=`), so `>` greedily matches the first character of `>=`",
+            "`input.slice(i, i + 2)` grabs 3 characters instead of 2",
+            "`i += 2` only advances by 1 index in JavaScript",
+            "The array `['>=', '<=', '==', '!=']` is missing the `>` symbol"
+          ],
+          correct: 0,
+          hint: "Always check multi-character operators (`>=`, `<=`, `==`, `!=`) BEFORE single-character operators (`>`, `<`, `=`)!"
         },
         {
           stage: 2,
           type: "mcq",
-          kicker: "STAGE 2 · EXPERT LEXER ORDER-OF-CHECK BUG",
-          prompt: "This tokenizer has a subtle bug when given `price >= 100`. Instead of producing `[FIELD, GTE, NUMBER]`, it crashes on `=`. Why?",
-          code: `if (input[i] === ">") {\n  tokens.push({ type: "GT", value: ">" });\n  i++; continue;\n}\nif (input.slice(i, i + 2) === ">=") {\n  tokens.push({ type: "GTE", value: ">=" });\n  i += 2; continue;\n}`,
+          kicker: "STAGE 2 · EXPERT TYPESCRIPT DISCRIMINATED UNIONS",
+          prompt: "Why do we include a literal `type: 'LogicalExpr'` and `type: 'Comparison'` field on each interface in our `ASTNode` union?",
+          code: `export type ASTNode =\n  | { type: "LogicalExpr"; operator: "AND" | "OR"; left: ASTNode; right: ASTNode }\n  | { type: "Comparison"; field: string; operator: string; value: string | number };`,
           options: [
-            "Single-char '>' is checked BEFORE two-char '>=', so '>' greedily matches the first character of '>=' and leaves '=' stranded",
-            "`input.slice(i, i + 2)` returns 3 characters instead of 2",
-            "`i += 2` skips over the number `100`",
-            "JavaScript strings cannot be indexed with `input[i]`"
+            "It creates a Discriminated Union: checking `if (node.type === 'LogicalExpr')` lets TypeScript automatically narrow and unlock `node.left` and `node.right` safely",
+            "Without a `type` property, JavaScript objects cannot be converted to JSON with `JSON.stringify()`",
+            "It forces all `Comparison` nodes to be placed on the left side of the tree",
+            "It converts `value` from a string into a boolean at compile time"
           ],
           correct: 0,
-          hint: "Maximal Munch Principle: Always check 2-character operators (`>=`, `<=`, `!=`, `==`) BEFORE single-character operators (`>`, `<`, `=`)!"
+          hint: "In TypeScript, a shared literal property (`type`) acts as a 'tag' (discriminant) so TypeScript knows which properties (`left/right` vs `field/value`) exist in each `if` branch."
         },
         {
           stage: 2,
           type: "mcq",
-          kicker: "STAGE 2 · STRICT TYPESCRIPT RECURSIVE AST UNION",
-          prompt: "Which TypeScript definition accurately models a recursive AST where a LogicalNode can hold either Comparisons OR nested LogicalNodes?",
-          code: `// Choose the sound recursive TypeScript discriminated union:`,
+          kicker: "STAGE 2 · EXPERT PARSER-TO-AST PRECEDENCE ARCHITECTURE",
+          prompt: "Look at `parseTokens(tokens)` from our playground. How does the call hierarchy between `parseOr()`, `parseAnd()`, and `parseComparison()` enforce that `AND` binds tighter than `OR`?",
+          code: `function parseAnd(): ASTNode {\n  let left = parseComparison();\n  while (pos < tokens.length && tokens[pos].type === 'AND') {\n    pos++;\n    left = { type: 'LogicalExpr', operator: 'AND', left, right: parseComparison() };\n  }\n  return left;\n}\nfunction parseOr(): ASTNode {\n  let left = parseAnd();\n  while (pos < tokens.length && tokens[pos].type === 'OR') {\n    pos++;\n    left = { type: 'LogicalExpr', operator: 'OR', left, right: parseAnd() };\n  }\n  return left;\n}`,
           options: [
-            "type ASTNode = ComparisonNode | LogicalNode;\ninterface LogicalNode { type: 'LogicalExpr'; operator: 'AND' | 'OR'; left: ASTNode; right: ASTNode; }",
-            "interface ASTNode { type: 'AND' & 'OR'; left: ComparisonNode; right: number; }",
-            "type ASTNode = Array<Token['value']>;",
-            "interface LogicalNode { left: string; right: string; operator: boolean; }"
+            "`parseOr()` calls `parseAnd()` first, which eagerly bundles adjacent `AND` comparisons into a subtree before `parseOr()` wraps them in an outer `OR` node",
+            "`parseComparison()` calls `parseOr()` first, which deletes all `AND` tokens",
+            "`while` loops in TypeScript always execute `AND` before `OR` alphabetically",
+            "`parseAnd()` only runs if there are no `OR` tokens anywhere in the rule"
           ],
           correct: 0,
-          hint: "Because `left` and `right` can be another `AND`/`OR` subtree or a `ComparisonNode`, their type must recursively reference the `ASTNode` union!"
+          hint: "Because `parseOr()` delegates to `parseAnd()` to get its `left` and `right` operands, any `AND` chains are completely assembled into subtrees before `OR` links them together!"
         },
         {
           stage: 3,
           type: "ast-builder",
           kicker: "STAGE 3 · EXPERT AST: PARENTHESES OVERRIDING PRECEDENCE",
-          prompt: "EXPERT PRECEDENCE OVERRIDE: Normally `AND` binds tighter than `OR`, but look at the parentheses here! Build the exact 3-level AST:",
+          prompt: "EXPERT PRECEDENCE OVERRIDE: Normally `AND` binds tighter than `OR`, but parentheses override precedence! Build the 3-level AST Org Chart:",
           rule: '(vip = "Gold" OR price > 100) AND stock > 0',
           layout: "three-level-left",
           slots: [
-            { role: "TOP BOSS NODE (Evaluated Last)", answer: "AND" },
+            { role: "TOP BOSS NODE (Root LogicalExpr)", answer: "AND" },
             { role: "LEFT MIDDLE MANAGER (Inside Parens)", answer: "OR" },
             { role: "OR's LEFT WORKER", answer: 'vip = "Gold"' },
             { role: "OR's RIGHT WORKER", answer: "price > 100" },
             { role: "RIGHT DIRECT REPORT", answer: "stock > 0" }
           ],
           choices: ["AND", "OR", 'vip = "Gold"', "price > 100", "stock > 0"],
-          hint: "Parentheses force `(vip = 'Gold' OR price > 100)` to group together first as the left child, making `AND` the Top Boss of the whole tree!"
+          hint: "Parentheses force `(vip = 'Gold' OR price > 100)` to become a subtree first (Left Middle Manager = OR), making `AND` the Top Boss of the whole tree!"
         },
         {
-          stage: 4,
-          type: "mcq",
-          kicker: "STAGE 4 · EXPERT CHEVROTAIN: $.MANY, $.OR & ATOMIC PARENS",
-          prompt: "To support chaining any number of `AND` clauses (e.g., `A AND B AND C`) AND parentheses in Chevrotain, which grammar pattern is correct?",
-          code: `$.RULE("andExpression", () => {\n  $.SUBRULE($.atomicExpression);\n  // How do we allow 0 or more 'AND <atomicExpression>' repetitions?\n});`,
-          options: [
-            "$.MANY(() => { $.CONSUME(And); $.SUBRULE2($.atomicExpression); });",
-            "$.OR(() => { $.CONSUME(And); $.CONSUME(Identifier); });",
-            "while (And) { $.SUBRULE($.atomicExpression); }",
-            "$.CONSUME_ALL(And, $.atomicExpression);"
+          stage: 3,
+          type: "ast-builder",
+          kicker: "STAGE 3 · EXPERT AST: LEFT-ASSOCIATIVE CHAINING",
+          prompt: "FINAL BOSS: Trace how `while (tokens[pos].type === 'AND')` builds a left-associative AST when chaining THREE `AND` conditions:",
+          rule: 'price > 100 AND stock > 0 AND rating >= 4',
+          layout: "three-level-left",
+          slots: [
+            { role: "OUTER TOP BOSS (2nd AND)", answer: "AND" },
+            { role: "LEFT MIDDLE MANAGER (1st AND)", answer: "AND" },
+            { role: "1st AND's LEFT WORKER", answer: "price > 100" },
+            { role: "1st AND's RIGHT WORKER", answer: "stock > 0" },
+            { role: "OUTER AND's RIGHT REPORT", answer: "rating >= 4" }
           ],
-          correct: 0,
-          hint: "`$.MANY(() => { ... })` handles zero or more repetitions (`*` in EBNF), and the second call to `$.atomicExpression` inside the same rule requires `$.SUBRULE2`!"
-        },
-        {
-          stage: 4,
-          type: "mcq",
-          kicker: "STAGE 4 · FINAL BOSS: ATOMIC EXPRESSION WITH PARENTHESES",
-          prompt: "In your lowest-level Chevrotain rule `atomicExpression`, how do you allow EITHER a `( expression )` OR a standard `comparison`?",
-          code: `$.RULE("atomicExpression", () => {\n  // Fill in the branching logic:\n});`,
-          options: [
-            "$.OR([\n  { ALT: () => { $.CONSUME(LParen); $.SUBRULE($.expression); $.CONSUME(RParen); } },\n  { ALT: () => { $.SUBRULE($.comparison); } }\n]);",
-            "$.MANY([\n  $.CONSUME(LParen),\n  $.SUBRULE($.comparison)\n]);",
-            "if (LParen) { $.SUBRULE($.expression); } else { $.CONSUME(Comparison); }",
-            "$.SUBRULE($.LParen) && $.SUBRULE($.RParen);"
-          ],
-          correct: 0,
-          hint: "`$.OR([ { ALT: ... }, { ALT: ... } ])` lets Chevrotain look ahead: if it sees `(`, it parses a nested expression; otherwise, it parses a comparison!"
+          choices: ["AND", "price > 100", "stock > 0", "rating >= 4", "OR"],
+          hint: "In `parseAnd()`, the first iteration bundles `price > 100 AND stock > 0` into `left`. The second iteration wraps that entire bundle as the `left` child of the second `AND`, with `rating >= 4` on the `right`!"
         }
       ]
     };
 
     /********************************************************************
-     * 4. GAME STATE
+     * 4. GAME STATE (WITH DYNAMIC MCQ OPTION SHUFFLING)
      ********************************************************************/
     let state = {
       playerName: "",
-      clientBrief: "Brief 1: E-Commerce Product Filter",
+      clientBrief: "Group 1 — Brief 1: E-Commerce Product Filter",
       difficulty: "senior",
       questions: [],
       qIndex: 0,
@@ -1012,9 +1065,13 @@
       timerId: null,
       locked: false,
       hintUsedOnCurrent: false,
-      // Interactive state for Stage 1 & Stage 3
+      // Stage 1 Lexer interactive state
       selectedTokens: [],
       availableTokens: [],
+      // Stage 2/3 MCQ shuffled options state
+      shuffledOptions: [],
+      shuffledCorrectIndex: 0,
+      // Stage 3 AST interactive state
       astValues: {},
       activeAstSlot: 0
     };
@@ -1033,7 +1090,7 @@
     };
 
     /********************************************************************
-     * 5. START SCREEN (WITH 4 DIFFICULTY TIERS UP TO EXPERT)
+     * 5. START SCREEN (WITH 4 DIFFICULTIES & ACTIVE CLIENT BRIEFS)
      ********************************************************************/
     function renderStartScreen() {
       hudStats.style.display = "none";
@@ -1042,12 +1099,12 @@
         <div class="card-panel">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
             <div>
-              <span class="kicker-tag">WEEKS 1–6 MIDTERM REVIEW GAME · DEPLOYABLE ON VERCEL</span>
+              <span class="kicker-tag">MIDTERM SCOPE · STEP 1 (LEXER) TO STEP 3 (AST) ONLY</span>
               <h1 style="font-size:2.3rem; font-weight:900; margin-top:10px; letter-spacing:-0.03em;">
-                🕹️ Compiler Arcade: Midterm Quest
+                🕹️ Compiler Arcade: Lexer to AST Quest
               </h1>
               <p style="color:var(--text-muted); font-size:1.02rem; margin-top:6px;">
-                Master the <b>Lexer (Coin Sorter)</b>, <b>TypeScript (Labeled Jars)</b>, <b>AST (Org Chart)</b>, and <b>Chevrotain Parser</b> across 4 difficulty tiers up to <b>Expert Architect</b>.
+                Master the <b>Lexer (Coin Sorter)</b>, <b>TypeScript ("Labeled Kitchen Jars")</b>, and <b>AST ("Office Org Chart")</b> across 4 difficulty tiers up to <b>Expert Architect</b>.
               </p>
             </div>
           </div>
@@ -1055,22 +1112,21 @@
           <div class="form-row" style="margin-top:24px;">
             <div class="input-group">
               <label>👤 Student / Team Name</label>
-              <input type="text" id="player-name" class="input-ctrl" placeholder="e.g., Alex Dela Cruz (Team Alpha)" value="${escapeHTML(state.playerName)}" />
+              <input type="text" id="player-name" class="input-ctrl" placeholder="e.g., Juan Dela Cruz (Group 1)" value="${escapeHTML(state.playerName)}" />
             </div>
             <div class="input-group">
-              <label>📋 Your Semester Client Brief</label>
+              <label>📋 Assigned Class Group & Client Brief</label>
               <select id="player-brief" class="input-ctrl">
-                <option value="Brief 1: E-Commerce Product Filter">🛒 Brief 1: E-Commerce Product Filter</option>
-                <option value="Brief 2: Loan Eligibility Checker">🏦 Brief 2: Loan & Scholarship Eligibility Checker</option>
-                <option value="Brief 3: Dynamic Formula Evaluator">🧮 Brief 3: Dynamic Pricing & Formula Evaluator</option>
-                <option value="Brief 4: Invoice Approval Router">🧾 Brief 4: Invoice & Document Approval Router</option>
-                <option value="Brief 5: DevOps Alert Rule Engine">🔔 Brief 5: DevOps Alert & Notification Engine</option>
+                <option value="Group 1 — Brief 1: E-Commerce Product Filter">🛒 Group 1 — Brief 1: E-Commerce Product Filter</option>
+                <option value="Group 2 — Brief 2: Loan & Scholarship Eligibility Checker">🏦 Group 2 — Brief 2: Loan & Scholarship Eligibility Checker</option>
+                <option value="Group 3 — Brief 4: Invoice & Template Approval Generator">🧾 Group 3 — Brief 4: Invoice & Template Approval Generator</option>
+                <option value="Brief 3: Dynamic Pricing & Formula Evaluator">🧮 Brief 3: Dynamic Pricing & Formula Evaluator</option>
               </select>
             </div>
           </div>
 
           <div class="input-group">
-            <label>⚡ Select Difficulty Tier (Up to Expert Architect)</label>
+            <label>⚡ Select Difficulty Tier (6 Challenges per Tier · Up to AST Only)</label>
           </div>
 
           <div class="diff-grid">
@@ -1091,10 +1147,10 @@
 
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; margin-top:10px;">
             <div style="font-size:0.86rem; color:var(--text-muted);">
-              🏆 Completing a run generates a verifiable <b>Midterm Arcade Completion Ticket</b> you can screenshot or print as PDF.
+              🏆 Completing a run generates a verifiable <b>Midterm AST Completion Certificate</b> you can screenshot or print to PDF.
             </div>
             <button class="btn ${state.difficulty === 'expert' ? 'btn-expert' : 'btn-primary'}" id="start-game-btn" style="font-size:1.05rem; padding:14px 28px;">
-              🚀 Launch ${DIFFICULTIES[state.difficulty].name} Campaign ▶
+              🚀 Launch ${DIFFICULTIES[state.difficulty].name} Quest ▶
             </button>
           </div>
         </div>
@@ -1114,7 +1170,7 @@
 
       document.getElementById("start-game-btn").onclick = () => {
         const nameInput = document.getElementById("player-name").value.trim();
-        state.playerName = nameInput || "Anonymous Compiler Dev";
+        state.playerName = nameInput || "Compiler Student";
         state.clientBrief = document.getElementById("player-brief").value;
         startGame(state.difficulty);
       };
@@ -1162,7 +1218,7 @@
         updateHUD();
         if (state.timeLeft <= 0) {
           clearInterval(state.timerId);
-          handleAnswer(false, "⏱️ Time's up! The compiler pipeline timed out on this stage.");
+          handleAnswer(false, "⏱️ Time's up! The compiler timed out on this stage.");
         }
       }, 1000);
     }
@@ -1192,6 +1248,15 @@
       } else if (q.type === "ast-builder") {
         state.astValues = {};
         state.activeAstSlot = 0;
+      } else if (q.type === "mcq") {
+        // Dynamically shuffle MCQ options so Option A is NOT always the answer!
+        const taggedOptions = q.options.map((text, idx) => ({
+          text,
+          isCorrect: idx === q.correct
+        }));
+        const mixed = shuffle(taggedOptions);
+        state.shuffledOptions = mixed.map(item => item.text);
+        state.shuffledCorrectIndex = mixed.findIndex(item => item.isCorrect);
       }
 
       startTimer();
@@ -1199,17 +1264,17 @@
     }
 
     /********************************************************************
-     * 7. RENDER ACTIVE QUESTION BY STAGE TYPE
+     * 7. RENDER ACTIVE QUESTION (3 STAGES UP TO AST ONLY)
      ********************************************************************/
     function renderCurrentQuestion(feedbackHTML = "") {
       const q = state.questions[state.qIndex];
       const diff = DIFFICULTIES[state.difficulty];
 
+      // 3-Stage Pipeline (Up to AST Only)
       const stages = [
-        { num: 1, name: "1. Lexer (Coin Sorter)" },
-        { num: 2, name: "2. TS & Bug Hunt" },
-        { num: 3, name: "3. AST (Org Chart)" },
-        { num: 4, name: "4. Parser (Chevrotain)" }
+        { num: 1, name: "1. Lexer (🪙 Coin Sorter)" },
+        { num: 2, name: "2. TypeScript (🫙 Labeled Jars)" },
+        { num: 3, name: "3. AST (🏢 Office Org Chart)" }
       ];
 
       const progressHTML = `
@@ -1217,7 +1282,7 @@
           ${stages.map(s => `
             <div class="stage-step ${q.stage === s.num ? 'active' : (q.stage > s.num ? 'done' : '')}">
               <span>${s.name}</span>
-              <span>${q.stage === s.num ? '◀ ACTIVE' : (q.stage > s.num ? '✓' : '')}</span>
+              <span>${q.stage === s.num ? '◀ ACTIVE' : (q.stage > s.num ? '✓ DONE' : 'UP NEXT')}</span>
             </div>
           `).join("")}
         </div>
@@ -1315,7 +1380,7 @@
             ${treeLayoutHTML}
           </div>
           <div style="font-size:0.82rem; font-weight:700; color:var(--amber); margin-bottom:8px; text-transform:uppercase;">
-            🏢 Click a Node Value to Assign to Highlighted Org Chart Slot:
+            🏢 Click a Node Value to Assign to the Highlighted Org Chart Slot:
           </div>
           <div class="token-pool">
             ${q.choices.map(c => `
@@ -1330,12 +1395,12 @@
         `;
       }
 
-      // --- TYPE 3: MULTIPLE CHOICE / CODE DEBUGGING ---
+      // --- TYPE 3: MULTIPLE CHOICE (SHUFFLED OPTIONS) ---
       else if (q.type === "mcq") {
         interactiveBody = `
           ${q.code ? `<div class="code-terminal">${escapeHTML(q.code)}</div>` : ""}
           <div class="options-grid">
-            ${q.options.map((opt, idx) => `
+            ${state.shuffledOptions.map((opt, idx) => `
               <button class="option-btn" data-opt="${idx}" ${state.locked ? 'disabled' : ''}>
                 <span style="color:var(--cyan); font-weight:800; margin-right:8px;">[${String.fromCharCode(65 + idx)}]</span>${escapeHTML(opt)}
               </button>
@@ -1354,17 +1419,17 @@
             </span>
           </div>
 
-          <h2 style="font-size:1.38rem; font-weight:800; line-height:1.35; margin-bottom:8px;">
+          <h2 style="font-size:1.35rem; font-weight:800; line-height:1.38; margin-bottom:8px;">
             ${q.prompt}
           </h2>
 
           ${interactiveBody}
 
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08); flex-wrap:wrap; gap:10px;">
             <button class="btn" id="hint-btn" ${state.locked || state.hintUsedOnCurrent ? 'disabled' : ''} style="font-size:0.82rem;">
               💡 Request Analogy Hint (${diff.hintCost === 0 ? 'FREE' : '-' + diff.hintCost + ' XP'})
             </button>
-            <span style="font-size:0.8rem; color:var(--text-muted);">Client Brief: <b>${escapeHTML(state.clientBrief)}</b></span>
+            <span style="font-size:0.8rem; color:var(--text-muted);">Assigned Group: <b>${escapeHTML(state.clientBrief)}</b></span>
           </div>
 
           ${state.hintUsedOnCurrent ? `<div class="hint-box"><b>💡 Instructor Hint:</b> ${escapeHTML(q.hint)}</div>` : ""}
@@ -1438,8 +1503,8 @@
           handleAnswer(
             isMatch,
             isMatch
-              ? "Spot-on token stream! The Coin Sorter labeled every piece accurately."
-              : `Token mismatch! Expected: ${expectedStr}`
+              ? "Spot-on token stream! The Coin Sorter labeled every token accurately."
+              : `Token mismatch! Expected order: ${expectedStr}`
           );
         };
       }
@@ -1470,8 +1535,8 @@
           handleAnswer(
             isMatch,
             isMatch
-              ? "AST Org Chart verified! Boss and child nodes are wired with proper precedence."
-              : `Org Chart structure error! Correct hierarchy: ${expectedSummary}`
+              ? "AST Org Chart verified! Boss and child nodes are wired with proper hierarchy."
+              : `Org Chart hierarchy error! Correct structure: ${expectedSummary}`
           );
         };
       }
@@ -1480,12 +1545,14 @@
         document.querySelectorAll("[data-opt]").forEach(btn => {
           btn.onclick = () => {
             const picked = Number(btn.dataset.opt);
-            const isCorrect = picked === q.correct;
+            const isCorrect = picked === state.shuffledCorrectIndex;
+            const correctOptionLetter = String.fromCharCode(65 + state.shuffledCorrectIndex);
+            const correctOptionText = state.shuffledOptions[state.shuffledCorrectIndex];
             handleAnswer(
               isCorrect,
               isCorrect
                 ? "Compiler check passed! Clean logic."
-                : `Compiler error! Correct answer: ${q.options[q.correct]}`
+                : `Compiler error! Correct answer was [${correctOptionLetter}]: ${correctOptionText}`
             );
           };
         });
@@ -1518,11 +1585,11 @@
       const feedbackHTML = `
         <div class="feedback-banner ${isCorrect ? 'correct' : 'wrong'}">
           <div>
-            <strong>${isCorrect ? '✅ COMPILER STAGE PASSED!' : '❌ SYNTAX / PIPELINE ERROR!'}</strong>
-            <div style="font-size:0.9rem; margin-top:4px;">${escapeHTML(message)}</div>
+            <strong>${isCorrect ? '✅ STAGE CHECK PASSED!' : '❌ COMPILER / AST ERROR!'}</strong>
+            <div style="font-size:0.9rem; margin-top:4px; white-space:pre-wrap;">${escapeHTML(message)}</div>
           </div>
           <button class="btn ${isCorrect ? 'btn-primary' : ''}" id="next-q-btn">
-            ${(state.qIndex + 1 < state.questions.length && state.lives > 0) ? 'Next Stage ▶' : 'View Final Results 🏆'}
+            ${(state.qIndex + 1 < state.questions.length && state.lives > 0) ? 'Next Challenge ▶' : 'View Final Results 🏆'}
           </button>
         </div>
       `;
@@ -1554,20 +1621,20 @@
         hashNum = ((hashNum << 5) - hashNum) + rawHash.charCodeAt(i);
         hashNum |= 0;
       }
-      const verifyCode = `PLC-${diff.id.toUpperCase().slice(0,3)}-${Math.abs(hashNum).toString(16).toUpperCase().slice(0, 6)}`;
+      const verifyCode = `AST-${diff.id.toUpperCase().slice(0,3)}-${Math.abs(hashNum).toString(16).toUpperCase().slice(0, 6)}`;
 
-      let rankTitle = "⚙️ Apprentice Tokenizer";
-      if (accuracy === 100 && state.difficulty === "expert") rankTitle = "👑 GRANDMASTER COMPILER ARCHITECT";
-      else if (state.difficulty === "expert" && survived) rankTitle = "🔥 Certified Expert Rule Engine Architect";
-      else if (accuracy >= 80) rankTitle = "🚀 Senior AST & Chevrotain Engineer";
-      else if (accuracy >= 60) rankTitle = "🪙 Certified Pipeline Builder";
+      let rankTitle = "🪙 Apprentice Coin Sorter (Lexer)";
+      if (accuracy === 100 && state.difficulty === "expert") rankTitle = "👑 GRANDMASTER AST ARCHITECT";
+      else if (state.difficulty === "expert" && survived) rankTitle = "🔥 Certified Expert AST Architect";
+      else if (accuracy >= 80) rankTitle = "🏢 Senior AST Org Chart Engineer";
+      else if (accuracy >= 60) rankTitle = "🫙 TypeScript & Tokenizer Builder";
 
       appStage.innerHTML = `
         <div class="card-panel">
           <div style="text-align:center; margin-bottom:18px;">
-            <span class="kicker-tag">${survived ? 'MIDTERM CAMPAIGN COMPLETE' : 'PIPELINE HALTED · OUT OF LIVES'}</span>
+            <span class="kicker-tag">${survived ? 'LEXER TO AST CAMPAIGN COMPLETE' : 'PIPELINE HALTED · OUT OF LIVES'}</span>
             <h1 style="font-size:2.2rem; font-weight:900; margin-top:10px;">
-              ${survived ? '🎉 Midterm Compiler Quest Cleared!' : '💥 Compiler Crashed — Try Again!'}
+              ${survived ? '🎉 Midterm AST Quest Cleared!' : '💥 Compiler Halted — Try Again!'}
             </h1>
           </div>
 
