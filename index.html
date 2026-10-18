@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compiler Arcade: Midterm Quest (Expert Edition) | PLC Course</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #070a12;
+      --bg-panel: #101726;
+      --bg-card: #182238;
+      --bg-code: #060911;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --cyan: #38bdf8;
+      --indigo: #6366f1;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+      --purple: #a855f7;
+      --border: #263554;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-deep);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.12), transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.12), transparent 40%),
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* TOP HUD NAVBAR */
+    header.hud-bar {
+      height: 68px;
+      background: rgba(16, 23, 38, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 900;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-badge {
+      background: linear-gradient(135deg, var(--cyan), var(--indigo));
+      color: #070a12;
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 0.78rem;
+    }
+
+    .hud-stats {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .hud-pill {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hud-pill.xp { border-color: rgba(56, 189, 248, 0.4); color: var(--cyan); }
+    .hud-pill.streak { border-color: rgba(245, 158, 11, 0.4); color: var(--amber); }
+    .hud-pill.lives { border-color: rgba(244, 63, 94, 0.4); color: var(--rose); }
+    .hud-pill.timer { border-color: rgba(168, 85, 247, 0.4); color: #e9d5ff; min-width: 92px; justify-content: center; }
+    .hud-pill.timer.danger { background: rgba(244, 63, 94, 0.25); border-color: var(--rose); color: #fda4af; animation: pulse 0.6s infinite alternate; }
+
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.06); }
+    }
+
+    /* MAIN CONTAINER */
+    main.game-stage {
+      flex: 1;
+      max-width: 1140px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 28px 20px 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .card-panel {
+      background: rgba(16, 23, 38, 0.9);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 34px 38px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+      position: relative;
+      animation: fadeSlide 0.3s ease-out;
+    }
+
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* DIFFICULTY SELECTOR CARDS */
+    .diff-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin: 18px 0 24px;
+    }
+
+    .diff-card {
+      background: rgba(24, 34, 56, 0.65);
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .diff-card:hover {
+      transform: translateY(-3px);
+      background: rgba(24, 34, 56, 0.95);
+    }
+
+    .diff-card.selected.intern { border-color: var(--emerald); box-shadow: 0 0 24px rgba(16, 185, 129, 0.25); }
+    .diff-card.selected.junior { border-color: var(--cyan); box-shadow: 0 0 24px rgba(56, 189, 248, 0.25); }
+    .diff-card.selected.senior { border-color: var(--purple); box-shadow: 0 0 24px rgba(168, 85, 247, 0.25); }
+    .diff-card.selected.expert { 
+      border-color: var(--rose); 
+      background: linear-gradient(145deg, rgba(244, 63, 94, 0.16), rgba(24, 34, 56, 0.95));
+      box-shadow: 0 0 28px rgba(244, 63, 94, 0.35); 
+    }
+
+    .diff-badge {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      width: fit-content;
+    }
+
+    .diff-card h3 { font-size: 1.08rem; font-weight: 800; margin-bottom: 6px; }
+    .diff-card p { font-size: 0.82rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 10px; }
+    .diff-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.74rem;
+      color: #cbd5e1;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 8px;
+    }
+
+    /* INPUTS & BUTTONS */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--cyan);
+      margin-bottom: 6px;
+    }
+
+    .input-ctrl {
+      width: 100%;
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .input-ctrl:focus { border-color: var(--cyan); }
+
+    .btn {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      padding: 11px 20px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn:hover:not(:disabled) {
+      border-color: var(--cyan);
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--cyan), var(--indigo));
+      color: #070a12;
+      border: none;
+      font-weight: 800;
+    }
+
+    .btn-expert {
+      background: linear-gradient(135deg, var(--rose), var(--amber));
+      color: #070a12;
+      border: none;
+      font-weight: 900;
+    }
+
+    /* PIPELINE PROGRESS BAR */
+    .stage-progress {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    .stage-step {
+      background: rgba(16, 23, 38, 0.75);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .stage-step.active {
+      border-color: var(--cyan);
+      background: rgba(56, 189, 248, 0.14);
+      color: #fff;
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.2);
+    }
+
+    .stage-step.done {
+      border-color: rgba(16, 185, 129, 0.5);
+      background: rgba(16, 185, 129, 0.12);
+      color: #6ee7b7;
+    }
+
+    /* CHALLENGE HEADER & CODE DISPLAY */
+    .challenge-kicker {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .kicker-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 99px;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--cyan);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+
+    .code-terminal {
+      background: var(--bg-code);
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      padding: 18px 22px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.96rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+      margin: 14px 0 20px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      box-shadow: inset 0 3px 12px rgba(0,0,0,0.6);
+    }
+
+    /* STAGE 1: COIN SORTER (LEXER) BUCKETS */
+    .token-tray {
+      min-height: 76px;
+      background: rgba(6, 9, 17, 0.8);
+      border: 2px dashed var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .token-pool {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .token-coin {
+      background: var(--bg-card);
+      border: 2px solid var(--cyan);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-family: 'JetBrains Mono', monospace;
+      cursor: pointer;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .token-coin:hover {
+      transform: translateY(-3px);
+      background: rgba(56, 189, 248, 0.18);
+    }
+
+    .token-coin .t-val { font-size: 0.95rem; font-weight: 800; color: #fff; }
+    .token-coin .t-type { font-size: 0.68rem; font-weight: 700; color: var(--cyan); margin-top: 2px; }
+
+    /* STAGE 3: AST ORG CHART VISUALIZER */
+    .ast-diagram {
+      background: rgba(6, 9, 17, 0.75);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 16px 0 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .ast-row {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      width: 100%;
+      flex-wrap: wrap;
+    }
+
+    .ast-slot {
+      min-width: 190px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: var(--bg-card);
+      border: 2px dashed var(--cyan);
+      text-align: center;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+      transition: all 0.15s ease;
+    }
+
+    .ast-slot.active-slot {
+      border-style: solid;
+      border-color: var(--amber);
+      box-shadow: 0 0 18px rgba(245, 158, 11, 0.35);
+    }
+
+    .ast-slot .slot-role {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .ast-slot .slot-val {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    /* MULTIPLE CHOICE / CODE OPTIONS */
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 16px 0;
+    }
+
+    .option-btn {
+      background: rgba(24, 34, 56, 0.75);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 15px 18px;
+      text-align: left;
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .option-btn:hover {
+      border-color: var(--cyan);
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    /* FEEDBACK TOAST & ANALOGY BOX */
+    .feedback-banner {
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      animation: fadeSlide 0.2s ease-out;
+    }
+
+    .feedback-banner.correct {
+      background: rgba(16, 185, 129, 0.16);
+      border: 1px solid var(--emerald);
+      color: #a7f3d0;
+    }
+
+    .feedback-banner.wrong {
+      background: rgba(244, 63, 94, 0.16);
+      border: 1px solid var(--rose);
+      color: #fecdd3;
+    }
+
+    .hint-box {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(99, 102, 241, 0.12));
+      border-left: 4px solid var(--amber);
+      padding: 12px 16px;
+      border-radius: 0 10px 10px 0;
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: #fde68a;
+    }
+
+    /* CERTIFICATE / COMPLETION CARD */
+    .cert-card {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      border: 2px solid var(--cyan);
+      border-radius: 20px;
+      padding: 32px;
+      margin: 20px 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @media (max-width: 860px) {
+      .diff-grid, .form-row, .options-grid, .stage-progress {
+        grid-template-columns: 1fr;
+      }
+      .card-panel { padding: 22px; }
+    }
+
+    @media print {
+      header.hud-bar, .no-print { display: none !important; }
+      body { background: #fff; color: #000; }
+      .cert-card { border: 2px solid #000; color: #000; background: #fff; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP HUD -->
+  <header class="hud-bar">
+    <div class="brand">
+      <span class="brand-badge">PLC · MIDTERM ARCADE</span>
+      <span>Rule Engine Compiler Quest</span>
+    </div>
+
+    <div class="hud-stats" id="hud-stats" style="display:none;">
+      <div class="hud-pill" id="hud-diff-badge">🟢 INTERN</div>
+      <div class="hud-pill xp">⚡ <span id="hud-xp">0</span> XP</div>
+      <div class="hud-pill streak">🔥 <span id="hud-streak">0</span>x</div>
+      <div class="hud-pill lives" id="hud-lives">❤️❤️❤️</div>
+      <div class="hud-pill timer" id="hud-timer">⏱️ 30s</div>
+      <button class="btn" id="sound-toggle" style="padding:6px 12px; font-size:0.8rem;">🔊 SFX</button>
+      <button class="btn" id="quit-btn" style="padding:6px 12px; font-size:0.8rem;">🏠 Menu</button>
+    </div>
+  </header>
+
+  <!-- MAIN STAGE -->
+  <main class="game-stage" id="app-stage"></main>
+
+  <script>
+    /********************************************************************
+     * 1. WEB AUDIO SYNTHESIZER (NO EXTERNAL ASSETS REQUIRED)
+     ********************************************************************/
+    let sfxEnabled = true;
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function playTone(freq, type = "sine", duration = 0.12, delay = 0) {
+      if (!sfxEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime + delay);
+        osc.stop(audioCtx.currentTime + delay + duration);
+      } catch (e) {}
+    }
+
+    function sfxClick() { playTone(520, "triangle", 0.07); }
+    function sfxSuccess() {
+      playTone(523.25, "sine", 0.1, 0);
+      playTone(659.25, "sine", 0.1, 0.08);
+      playTone(783.99, "sine", 0.18, 0.16);
+    }
+    function sfxError() {
+      playTone(180, "sawtooth", 0.18, 0);
+      playTone(140, "sawtooth", 0.22, 0.12);
+    }
+    function sfxFanfare() {
+      [523, 659, 784, 1046].forEach((f, idx) => playTone(f, "triangle", 0.18, idx * 0.1));
+    }
+
+    /********************************************************************
+     * 2. DIFFICULTY TIERS (INTERN -> JUNIOR -> SENIOR -> EXPERT)
+     ********************************************************************/
+    const DIFFICULTIES = {
+      intern: {
+        id: "intern",
+        name: "Intern",
+        icon: "🟢",
+        label: "🟢 INTERN (EASY)",
+        timePerQ: 45,
+        lives: 4,
+        multiplier: 1.0,
+        hintCost: 0,
+        desc: "Weeks 1–2 basics: Core visual analogies (Coin Sorter, Labeled Jars, Org Chart) and simple 3-token rules."
+      },
+      junior: {
+        id: "junior",
+        name: "Junior Dev",
+        icon: "🔵",
+        label: "🔵 JUNIOR DEV (MEDIUM)",
+        timePerQ: 35,
+        lives: 3,
+        multiplier: 1.5,
+        hintCost: 25,
+        desc: "Weeks 3–4 Prelim & TypeScript: Multi-token rules with strings, >= operators, and 2-level AST Org Charts."
+      },
+      senior: {
+        id: "senior",
+        name: "Senior Dev",
+        icon: "🟣",
+        label: "🟣 SENIOR DEV (HARD)",
+        timePerQ: 25,
+        lives: 3,
+        multiplier: 2.0,
+        hintCost: 50,
+        desc: "Weeks 5–6 Midterm Standard: Operator precedence (AND before OR), Chevrotain grammar rules, and bug hunts."
+      },
+      expert: {
+        id: "expert",
+        name: "Expert Architect",
+        icon: "🔥",
+        label: "🔥 EXPERT ARCHITECT",
+        timePerQ: 18,
+        lives: 2,
+        multiplier: 3.0,
+        hintCost: 100,
+        desc: "Insane Mode: Trap tokens, 3-level AST precedence vs. parentheses override, Chevrotain $.OR/$.MANY & strict TS unions."
+      }
+    };
+
+    /********************************************************************
+     * 3. QUESTION BANK (SCALED ACROSS ALL 4 DIFFICULTIES & 4 STAGES)
+     ********************************************************************/
+    const QUESTION_BANK = {
+      // ==================== TIER 1: INTERN (EASY) ====================
+      intern: [
+        {
+          stage: 1,
+          type: "lexer-sort",
+          kicker: "STAGE 1 · THE LEXER (COIN SORTER)",
+          prompt: "Act as the Lexer (Coin Sorter)! Click the tokens in the exact left-to-right order produced for this Product Filter rule:",
+          rule: 'price > 100',
+          target: [
+            { val: "price", type: "FIELD" },
+            { val: ">", type: "GT" },
+            { val: "100", type: "NUMBER" }
+          ],
+          distractors: [
+            { val: "price > 100", type: "RAW_STRING" }
+          ],
+          hint: "Remember Week 2: The Lexer skips spaces and labels the identifier (FIELD), the operator (GT), and the digits (NUMBER)."
+        },
+        {
+          stage: 1,
+          type: "mcq",
+          kicker: "STAGE 1 · COMPILER ANALOGIES",
+          prompt: "In Week 2, why do we compare the Lexer (Tokenizer) to a mechanical Coin Sorter?",
+          code: `Input:  age >= 21\nOutput: [ age : FIELD ] [ >= : GTE ] [ 21 : NUMBER ]`,
+          options: [
+            "Because it sorts raw text characters into labeled token buckets without understanding the full rule yet",
+            "Because it calculates the final true or false boolean answer immediately",
+            "Because it saves rules into MongoDB collections",
+            "Because it arranges comparisons into a hierarchical Org Chart"
+          ],
+          correct: 0,
+          hint: "A coin sorter drops quarters and dimes into labeled trays—it doesn't decide what to buy yet!"
+        },
+        {
+          stage: 2,
+          type: "mcq",
+          kicker: "STAGE 2 · JAVASCRIPT & TYPESCRIPT (LABELED JARS)",
+          prompt: "In Week 4, we compare TypeScript types to 'Labeled Jars in a Kitchen'. What does this union type prevent?",
+          code: `type TokenType = "NUMBER" | "GT" | "AND";\n\ninterface Token {\n  type: TokenType;\n  value?: number;\n}`,
+          options: [
+            "It catches typos like type: 'NUMBR' before you even run the program",
+            "It makes the while-loop in tokenize() run 10x faster in the browser",
+            "It automatically writes the Chevrotain parser without grammar rules",
+            "It connects the React frontend to Express"
+          ],
+          correct: 0,
+          hint: "A jar labeled 'Sugar' stops you from accidentally pouring in salt before baking the cake."
+        },
+        {
+          stage: 3,
+          type: "ast-builder",
+          kicker: "STAGE 3 · THE AST (OFFICE ORG CHART)",
+          prompt: "Build the AST Org Chart for this rule! Click a slot in the tree, then click the correct node below:",
+          rule: 'price > 100 AND stock > 0',
+          layout: "two-level",
+          slots: [
+            { role: "TOP BOSS NODE (Root)", answer: "AND" },
+            { role: "LEFT REPORT (Child 1)", answer: "price > 100" },
+            { role: "RIGHT REPORT (Child 2)", answer: "stock > 0" }
+          ],
+          choices: ["AND", "price > 100", "stock > 0", "OR", "100 > price"],
+          hint: "In our Week 4 Org Chart analogy, the logical operator (AND) sits at the top as the Boss, and the two comparisons report underneath it."
+        },
+        {
+          stage: 4,
+          type: "mcq",
+          kicker: "STAGE 4 · CHEVROTAIN PARSER",
+          prompt: "Look at this starter Chevrotain grammar rule from Week 5. What does $.CONSUME(NumberLiteral) do?",
+          code: `$.RULE("comparison", () => {\n  $.CONSUME(Identifier);\n  $.CONSUME(GreaterThan);\n  $.CONSUME(NumberLiteral);\n});`,
+          options: [
+            "It expects and eats one NumberLiteral token (like 100) from the token list",
+            "It converts a string into a MongoDB document",
+            "It deletes all numbers from the computer's memory",
+            "It evaluates whether the comparison is true or false"
+          ],
+          correct: 0,
+          hint: "CONSUME eats one specific token type at the current position in the token stream."
+        }
+      ],
+
+      // ==================== TIER 2: JUNIOR DEV (MEDIUM) ====================
+      junior: [
+        {
+          stage: 1,
+          type: "lexer-sort",
+          kicker: "STAGE 1 · MULTI-TOKEN LEXER",
+          prompt: "Tokenize this E-Commerce Client Brief rule in exact order (watch out for quotes and two-character operators!):",
+          rule: 'price >= 250 AND category = "Tech"',
+          target: [
+            { val: "price", type: "FIELD" },
+            { val: ">=", type: "GTE" },
+            { val: "250", type: "NUMBER" },
+            { val: "AND", type: "AND" },
+            { val: "category", type: "FIELD" },
+            { val: "=", type: "EQ" },
+            { val: "Tech", type: "STRING" }
+          ],
+          distractors: [
+            { val: ">", type: "GT" },
+            { val: "Tech", type: "FIELD" }
+          ],
+          hint: ">= is a single GTE token, AND is a logical keyword token, and quoted \"Tech\" becomes a STRING token."
+        },
+        {
+          stage: 2,
+          type: "mcq",
+          kicker: "STAGE 2 · PRELIM BUG HUNT",
+          prompt: "This hardcoded rule from Week 1/3 always prints 'Matches!' even when category is 'Books'. Which line has the bug?",
+          code: `1: let price = 150;\n2: let category = "Books";\n3: if (price > 100 && category = "Electronics") {\n4:   console.log("Matches!");\n5: }`,
+          options: [
+            "Line 3: Uses single '=' (assignment) instead of '===' (comparison)",
+            "Line 3: Should use 'AND' instead of '&&' in standard JavaScript",
+            "Line 1: 150 should be inside quotes",
+            "Line 4: console.log only prints true values"
+          ],
+          correct: 0,
+          hint: "In JavaScript, a single '=' overwrites the variable! You need '===' to compare."
+        },
+        {
+          stage: 2,
+          type: "mcq",
+          kicker: "STAGE 2 · TYPESCRIPT TOKEN INTERFACE",
+          prompt: "Your tokenizer needs to store either a text string OR a number inside token.value. Which TypeScript interface is valid?",
+          code: `export type TokenType = "FIELD" | "NUMBER" | "STRING" | "GT" | "AND";`,
+          options: [
+            "export interface Token { type: TokenType; value: string | number; }",
+            "export interface Token { type: string && number; value: TokenType; }",
+            "export type Token = [TokenType, boolean];",
+            "interface Token { type === TokenType; value: any[]; }"
+          ],
+          correct: 0,
+          hint: "In TypeScript, the pipe symbol (string | number) means a value can be a string OR a number."
+        },
+        {
+          stage: 3,
+          type: "ast-builder",
+          kicker: "STAGE 3 · LOAN BRIEF AST ORG CHART",
+          prompt: "Construct the AST Org Chart for Brief 2 (Loan Eligibility Checker):",
+          rule: 'income >= 35000 OR creditScore >= 700',
+          layout: "two-level",
+          slots: [
+            { role: "TOP BOSS NODE (Root)", answer: "OR" },
+            { role: "LEFT REPORT (Child 1)", answer: "income >= 35000" },
+            { role: "RIGHT REPORT (Child 2)", answer: "creditScore >= 700" }
+          ],
+          choices: ["OR", "AND", "income >= 35000", "creditScore >= 700", "35000 >= 700"],
+          hint: "The logical connective in this rule is OR, so OR sits at the top of the Org Chart."
+        },
+        {
+          stage: 4,
+          type: "mcq",
+          kicker: "STAGE 4 · CHEVROTAIN SUBRULE",
+          prompt: "In Week 5, when building `andExpression` from two `comparison` rules, when do we use `$.SUBRULE` vs `$.CONSUME`?",
+          code: `$.RULE("andExpression", () => {\n  $.SUBRULE($.comparison);\n  $.CONSUME(And);\n  $.SUBRULE2($.comparison);\n});`,
+          options: [
+            "$.CONSUME eats a single token from the lexer; $.SUBRULE calls another grammar rule",
+            "$.SUBRULE is only used for numbers; $.CONSUME is only used for strings",
+            "$.CONSUME builds the AST; $.SUBRULE deletes whitespace",
+            "They are completely identical and interchangeable"
+          ],
+          correct: 0,
+          hint: "comparison is another $.RULE, so we invoke it with $.SUBRULE. And is a single Token, so we eat it with $.CONSUME."
+        }
+      ],
+
+      // ==================== TIER 3: SENIOR DEV (HARD / MIDTERM) ====================
+      senior: [
+        {
+          stage: 1,
+          type: "lexer-sort",
+          kicker: "STAGE 1 · DEVOPS ALERT LEXER",
+          prompt: "Tokenize this Brief 5 (Alert Engine) rule. Beware of trap tokens in the pool!",
+          rule: 'cpuLoad > 85 OR status != "idle"',
+          target: [
+            { val: "cpuLoad", type: "FIELD" },
+            { val: ">", type: "GT" },
+            { val: "85", type: "NUMBER" },
+            { val: "OR", type: "OR" },
+            { val: "status", type: "FIELD" },
+            { val: "!=", type: "NEQ" },
+            { val: "idle", type: "STRING" }
+          ],
+          distractors: [
+            { val: "OR", type: "FIELD" },
+            { val: "\"idle\"", type: "FIELD" },
+            { val: "!", type: "NOT" }
+          ],
+          hint: "Watch the labels! 'OR' must be typed as OR (not FIELD), '!=' is a single NEQ token, and 'idle' is a STRING."
+        },
+        {
+          stage: 2,
+          type: "mcq",
+          kicker: "STAGE 2 · TOKENIZER INFINITE LOOP BUG",
+          prompt: "When a student tests `tokenize('price > 100')`, their browser tab freezes in an infinite loop! Why?",
+          code: `while (i < input.length) {\n  const char = input[i];\n  if (/\\s/.test(char)) { i++; continue; }\n  if (char === ">") {\n    tokens.push({ type: "GT", value: ">" });\n    continue; // <-- Look closely here!\n  }\n  i++;\n}`,
+          options: [
+            "Inside `if (char === '>')`, `continue` runs before `i++`, so `i` stays stuck on '>' forever",
+            "The regular expression `/\\s/` matches numbers instead of spaces",
+            "`tokens.push` resets `i` back to 0 every time it is called",
+            "`while (i < input.length)` should be `while (i <= input.length)`"
+          ],
+          correct: 0,
+          hint: "Every branch that uses `continue` MUST advance the cursor `i++` first, or the loop inspects the exact same character forever!"
+        },
+        {
+          stage: 3,
+          type: "ast-builder",
+          kicker: "STAGE 3 · OPERATOR PRECEDENCE AST (AND vs OR)",
+          prompt: "CRITICAL MIDTERM CONCEPT: Remember that `AND` has higher precedence (binds tighter) than `OR`! Build the 3-level AST Org Chart:",
+          rule: 'vip = "Gold" OR price > 100 AND stock > 0',
+          layout: "three-level-right",
+          slots: [
+            { role: "TOP BOSS (Lowest Precedence)", answer: "OR" },
+            { role: "LEFT DIRECT REPORT", answer: 'vip = "Gold"' },
+            { role: "RIGHT MIDDLE MANAGER (Binds Tighter)", answer: "AND" },
+            { role: "AND's LEFT WORKER", answer: "price > 100" },
+            { role: "AND's RIGHT WORKER", answer: "stock > 0" }
+          ],
+          choices: ["OR", "AND", 'vip = "Gold"', "price > 100", "stock > 0"],
+          hint: "Because AND groups first (like multiplication before addition), (price > 100 AND stock > 0) forms a bundle first, and OR sits at the very top as the Root Boss!"
+        },
+        {
+          stage: 4,
+          type: "mcq",
+          kicker: "STAGE 4 · CHEVROTAIN REPEATED SUBRULES",
+          prompt: "Why does Chevrotain require `$.SUBRULE2($.comparison)` on the second call inside the same grammar rule?",
+          code: `$.RULE("andExpression", () => {\n  $.SUBRULE($.comparison);\n  $.CONSUME(And);\n  $.SUBRULE2($.comparison); // Why the '2'?\n});`,
+          options: [
+            "Chevrotain uses numbered suffixes (SUBRULE, SUBRULE2, CONSUME2) to distinguish multiple calls to the same rule during internal lookahead recording",
+            "SUBRULE2 means it consumes two tokens at once instead of one",
+            "SUBRULE2 runs the rule in a background thread",
+            "Without SUBRULE2, TypeScript converts the token into a number"
+          ],
+          correct: 0,
+          hint: "When the same rule or token appears more than once in the same $.RULE block, Chevrotain needs numbered calls (1, 2, 3...) to track its internal grammar state."
+        },
+        {
+          stage: 4,
+          type: "mcq",
+          kicker: "STAGE 4 · GRAMMAR PRECEDENCE HIERARCHY",
+          prompt: "In Chevrotain, how do we enforce that `AND` binds tighter (higher precedence) than `OR`?",
+          code: `// How should the rules call each other?`,
+          options: [
+            "orExpression calls $.SUBRULE($.andExpression), and andExpression calls $.SUBRULE($.comparison)",
+            "comparison calls $.SUBRULE($.orExpression), which calls $.CONSUME(Identifier)",
+            "Put all tokens inside a single array in alphabetical order",
+            "Chevrotain automatically knows English word priority without grammar rules"
+          ],
+          correct: 0,
+          hint: "Rules lower in the call chain (closer to the bottom tokens) bind tighter! So `orExpression -> andExpression -> comparison` puts OR at the top of the AST and AND underneath."
+        }
+      ],
+
+      // ==================== TIER 4: EXPERT ARCHITECT (INSANE) ====================
+      expert: [
+        {
+          stage: 1,
+          type: "lexer-sort",
+          kicker: "STAGE 1 · EXPERT LEXER WITH PARENTHESES & FLOATS",
+          prompt: "EXPERT CHALLENGE: Tokenize this grouped Formula/Alert DSL rule. Watch out for subtle trap tokens!",
+          rule: '(subtotal >= 499.95 OR vip = "Platinum") AND tax != 0',
+          target: [
+            { val: "(", type: "LPAREN" },
+            { val: "subtotal", type: "FIELD" },
+            { val: ">=", type: "GTE" },
+            { val: "499.95", type: "NUMBER" },
+            { val: "OR", type: "OR" },
+            { val: "vip", type: "FIELD" },
+            { val: "=", type: "EQ" },
+            { val: "Platinum", type: "STRING" },
+            { val: ")", type: "RPAREN" },
+            { val: "AND", type: "AND" },
+            { val: "tax", type: "FIELD" },
+            { val: "!=", type: "NEQ" },
+            { val: "0", type: "NUMBER" }
+          ],
+          distractors: [
+            { val: "499", type: "NUMBER" },
+            { val: ".95", type: "NUMBER" },
+            { val: "Platinum", type: "FIELD" },
+            { val: ">", type: "GT" }
+          ],
+          hint: "Parentheses are separate LPAREN/RPAREN tokens, 499.95 is a single decimal NUMBER token, and quotes are stripped from the STRING value."
+        },
+        {
+          stage: 2,
+          type: "mcq",
+          kicker: "STAGE 2 · EXPERT LEXER ORDER-OF-CHECK BUG",
+          prompt: "This tokenizer has a subtle bug when given `price >= 100`. Instead of producing `[FIELD, GTE, NUMBER]`, it crashes on `=`. Why?",
+          code: `if (input[i] === ">") {\n  tokens.push({ type: "GT", value: ">" });\n  i++; continue;\n}\nif (input.slice(i, i + 2) === ">=") {\n  tokens.push({ type: "GTE", value: ">=" });\n  i += 2; continue;\n}`,
+          options: [
+            "Single-char '>' is checked BEFORE two-char '>=', so '>' greedily matches the first character of '>=' and leaves '=' stranded",
+            "`input.slice(i, i + 2)` returns 3 characters instead of 2",
+            "`i += 2` skips over the number `100`",
+            "JavaScript strings cannot be indexed with `input[i]`"
+          ],
+          correct: 0,
+          hint: "Maximal Munch Principle: Always check 2-character operators (`>=`, `<=`, `!=`, `==`) BEFORE single-character operators (`>`, `<`, `=`)!"
+        },
+        {
+          stage: 2,
+          type: "mcq",
+          kicker: "STAGE 2 · STRICT TYPESCRIPT RECURSIVE AST UNION",
+          prompt: "Which TypeScript definition accurately models a recursive AST where a LogicalNode can hold either Comparisons OR nested LogicalNodes?",
+          code: `// Choose the sound recursive TypeScript discriminated union:`,
+          options: [
+            "type ASTNode = ComparisonNode | LogicalNode;\ninterface LogicalNode { type: 'LogicalExpr'; operator: 'AND' | 'OR'; left: ASTNode; right: ASTNode; }",
+            "interface ASTNode { type: 'AND' & 'OR'; left: ComparisonNode; right: number; }",
+            "type ASTNode = Array<Token['value']>;",
+            "interface LogicalNode { left: string; right: string; operator: boolean; }"
+          ],
+          correct: 0,
+          hint: "Because `left` and `right` can be another `AND`/`OR` subtree or a `ComparisonNode`, their type must recursively reference the `ASTNode` union!"
+        },
+        {
+          stage: 3,
+          type: "ast-builder",
+          kicker: "STAGE 3 · EXPERT AST: PARENTHESES OVERRIDING PRECEDENCE",
+          prompt: "EXPERT PRECEDENCE OVERRIDE: Normally `AND` binds tighter than `OR`, but look at the parentheses here! Build the exact 3-level AST:",
+          rule: '(vip = "Gold" OR price > 100) AND stock > 0',
+          layout: "three-level-left",
+          slots: [
+            { role: "TOP BOSS NODE (Evaluated Last)", answer: "AND" },
+            { role: "LEFT MIDDLE MANAGER (Inside Parens)", answer: "OR" },
+            { role: "OR's LEFT WORKER", answer: 'vip = "Gold"' },
+            { role: "OR's RIGHT WORKER", answer: "price > 100" },
+            { role: "RIGHT DIRECT REPORT", answer: "stock > 0" }
+          ],
+          choices: ["AND", "OR", 'vip = "Gold"', "price > 100", "stock > 0"],
+          hint: "Parentheses force `(vip = 'Gold' OR price > 100)` to group together first as the left child, making `AND` the Top Boss of the whole tree!"
+        },
+        {
+          stage: 4,
+          type: "mcq",
+          kicker: "STAGE 4 · EXPERT CHEVROTAIN: $.MANY, $.OR & ATOMIC PARENS",
+          prompt: "To support chaining any number of `AND` clauses (e.g., `A AND B AND C`) AND parentheses in Chevrotain, which grammar pattern is correct?",
+          code: `$.RULE("andExpression", () => {\n  $.SUBRULE($.atomicExpression);\n  // How do we allow 0 or more 'AND <atomicExpression>' repetitions?\n});`,
+          options: [
+            "$.MANY(() => { $.CONSUME(And); $.SUBRULE2($.atomicExpression); });",
+            "$.OR(() => { $.CONSUME(And); $.CONSUME(Identifier); });",
+            "while (And) { $.SUBRULE($.atomicExpression); }",
+            "$.CONSUME_ALL(And, $.atomicExpression);"
+          ],
+          correct: 0,
+          hint: "`$.MANY(() => { ... })` handles zero or more repetitions (`*` in EBNF), and the second call to `$.atomicExpression` inside the same rule requires `$.SUBRULE2`!"
+        },
+        {
+          stage: 4,
+          type: "mcq",
+          kicker: "STAGE 4 · FINAL BOSS: ATOMIC EXPRESSION WITH PARENTHESES",
+          prompt: "In your lowest-level Chevrotain rule `atomicExpression`, how do you allow EITHER a `( expression )` OR a standard `comparison`?",
+          code: `$.RULE("atomicExpression", () => {\n  // Fill in the branching logic:\n});`,
+          options: [
+            "$.OR([\n  { ALT: () => { $.CONSUME(LParen); $.SUBRULE($.expression); $.CONSUME(RParen); } },\n  { ALT: () => { $.SUBRULE($.comparison); } }\n]);",
+            "$.MANY([\n  $.CONSUME(LParen),\n  $.SUBRULE($.comparison)\n]);",
+            "if (LParen) { $.SUBRULE($.expression); } else { $.CONSUME(Comparison); }",
+            "$.SUBRULE($.LParen) && $.SUBRULE($.RParen);"
+          ],
+          correct: 0,
+          hint: "`$.OR([ { ALT: ... }, { ALT: ... } ])` lets Chevrotain look ahead: if it sees `(`, it parses a nested expression; otherwise, it parses a comparison!"
+        }
+      ]
+    };
+
+    /********************************************************************
+     * 4. GAME STATE
+     ********************************************************************/
+    let state = {
+      playerName: "",
+      clientBrief: "Brief 1: E-Commerce Product Filter",
+      difficulty: "senior",
+      questions: [],
+      qIndex: 0,
+      xp: 0,
+      streak: 0,
+      maxStreak: 0,
+      correctCount: 0,
+      lives: 3,
+      timeLeft: 25,
+      timerId: null,
+      locked: false,
+      hintUsedOnCurrent: false,
+      // Interactive state for Stage 1 & Stage 3
+      selectedTokens: [],
+      availableTokens: [],
+      astValues: {},
+      activeAstSlot: 0
+    };
+
+    const appStage = document.getElementById("app-stage");
+    const hudStats = document.getElementById("hud-stats");
+
+    document.getElementById("sound-toggle").onclick = (e) => {
+      sfxEnabled = !sfxEnabled;
+      e.target.textContent = sfxEnabled ? "🔊 SFX" : "🔇 Muted";
+    };
+
+    document.getElementById("quit-btn").onclick = () => {
+      clearInterval(state.timerId);
+      renderStartScreen();
+    };
+
+    /********************************************************************
+     * 5. START SCREEN (WITH 4 DIFFICULTY TIERS UP TO EXPERT)
+     ********************************************************************/
+    function renderStartScreen() {
+      hudStats.style.display = "none";
+
+      appStage.innerHTML = `
+        <div class="card-panel">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+            <div>
+              <span class="kicker-tag">WEEKS 1–6 MIDTERM REVIEW GAME · DEPLOYABLE ON VERCEL</span>
+              <h1 style="font-size:2.3rem; font-weight:900; margin-top:10px; letter-spacing:-0.03em;">
+                🕹️ Compiler Arcade: Midterm Quest
+              </h1>
+              <p style="color:var(--text-muted); font-size:1.02rem; margin-top:6px;">
+                Master the <b>Lexer (Coin Sorter)</b>, <b>TypeScript (Labeled Jars)</b>, <b>AST (Org Chart)</b>, and <b>Chevrotain Parser</b> across 4 difficulty tiers up to <b>Expert Architect</b>.
+              </p>
+            </div>
+          </div>
+
+          <div class="form-row" style="margin-top:24px;">
+            <div class="input-group">
+              <label>👤 Student / Team Name</label>
+              <input type="text" id="player-name" class="input-ctrl" placeholder="e.g., Alex Dela Cruz (Team Alpha)" value="${escapeHTML(state.playerName)}" />
+            </div>
+            <div class="input-group">
+              <label>📋 Your Semester Client Brief</label>
+              <select id="player-brief" class="input-ctrl">
+                <option value="Brief 1: E-Commerce Product Filter">🛒 Brief 1: E-Commerce Product Filter</option>
+                <option value="Brief 2: Loan Eligibility Checker">🏦 Brief 2: Loan & Scholarship Eligibility Checker</option>
+                <option value="Brief 3: Dynamic Formula Evaluator">🧮 Brief 3: Dynamic Pricing & Formula Evaluator</option>
+                <option value="Brief 4: Invoice Approval Router">🧾 Brief 4: Invoice & Document Approval Router</option>
+                <option value="Brief 5: DevOps Alert Rule Engine">🔔 Brief 5: DevOps Alert & Notification Engine</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>⚡ Select Difficulty Tier (Up to Expert Architect)</label>
+          </div>
+
+          <div class="diff-grid">
+            ${Object.values(DIFFICULTIES).map(d => `
+              <div class="diff-card ${d.id} ${state.difficulty === d.id ? 'selected' : ''}" data-diff="${d.id}">
+                <div>
+                  <span class="diff-badge" style="background:rgba(255,255,255,0.08);">${d.icon}${d.multiplier}x XP</span>
+                  <h3>${d.name}</h3>
+                  <p>${d.desc}</p>
+                </div>
+                <div class="diff-meta">
+                  ⏱️ ${d.timePerQ}s / Q &nbsp;·&nbsp; ❤️ ${d.lives} Lives<br>
+                  💡 Hint: ${d.hintCost === 0 ? 'Free' : '-' + d.hintCost + ' XP'}
+                </div>
+              </div>
+            `).join("")}
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; margin-top:10px;">
+            <div style="font-size:0.86rem; color:var(--text-muted);">
+              🏆 Completing a run generates a verifiable <b>Midterm Arcade Completion Ticket</b> you can screenshot or print as PDF.
+            </div>
+            <button class="btn ${state.difficulty === 'expert' ? 'btn-expert' : 'btn-primary'}" id="start-game-btn" style="font-size:1.05rem; padding:14px 28px;">
+              🚀 Launch ${DIFFICULTIES[state.difficulty].name} Campaign ▶
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("player-brief").value = state.clientBrief;
+
+      document.querySelectorAll(".diff-card").forEach(card => {
+        card.onclick = () => {
+          sfxClick();
+          state.playerName = document.getElementById("player-name").value;
+          state.clientBrief = document.getElementById("player-brief").value;
+          state.difficulty = card.dataset.diff;
+          renderStartScreen();
+        };
+      });
+
+      document.getElementById("start-game-btn").onclick = () => {
+        const nameInput = document.getElementById("player-name").value.trim();
+        state.playerName = nameInput || "Anonymous Compiler Dev";
+        state.clientBrief = document.getElementById("player-brief").value;
+        startGame(state.difficulty);
+      };
+    }
+
+    /********************************************************************
+     * 6. LAUNCH & MANAGE GAME LOOP
+     ********************************************************************/
+    function startGame(diffKey) {
+      sfxClick();
+      const diff = DIFFICULTIES[diffKey];
+      state.questions = JSON.parse(JSON.stringify(QUESTION_BANK[diffKey]));
+      state.qIndex = 0;
+      state.xp = 0;
+      state.streak = 0;
+      state.maxStreak = 0;
+      state.correctCount = 0;
+      state.lives = diff.lives;
+      state.locked = false;
+
+      hudStats.style.display = "flex";
+      document.getElementById("hud-diff-badge").textContent = diff.label;
+      loadQuestion();
+    }
+
+    function updateHUD() {
+      const diff = DIFFICULTIES[state.difficulty];
+      document.getElementById("hud-xp").textContent = state.xp;
+      document.getElementById("hud-streak").textContent = state.streak;
+      document.getElementById("hud-lives").textContent = "❤️".repeat(Math.max(0, state.lives)) + "🖤".repeat(Math.max(0, diff.lives - state.lives));
+      const timerEl = document.getElementById("hud-timer");
+      timerEl.textContent = `⏱️ ${state.timeLeft}s`;
+      timerEl.classList.toggle("danger", state.timeLeft <= 6);
+    }
+
+    function startTimer() {
+      clearInterval(state.timerId);
+      const diff = DIFFICULTIES[state.difficulty];
+      state.timeLeft = diff.timePerQ;
+      updateHUD();
+
+      state.timerId = setInterval(() => {
+        if (state.locked) return;
+        state.timeLeft--;
+        updateHUD();
+        if (state.timeLeft <= 0) {
+          clearInterval(state.timerId);
+          handleAnswer(false, "⏱️ Time's up! The compiler pipeline timed out on this stage.");
+        }
+      }, 1000);
+    }
+
+    function shuffle(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function loadQuestion() {
+      if (state.qIndex >= state.questions.length || state.lives <= 0) {
+        renderEndScreen();
+        return;
+      }
+
+      state.locked = false;
+      state.hintUsedOnCurrent = false;
+      const q = state.questions[state.qIndex];
+
+      if (q.type === "lexer-sort") {
+        state.selectedTokens = [];
+        state.availableTokens = shuffle([...q.target, ...(q.distractors || [])]);
+      } else if (q.type === "ast-builder") {
+        state.astValues = {};
+        state.activeAstSlot = 0;
+      }
+
+      startTimer();
+      renderCurrentQuestion();
+    }
+
+    /********************************************************************
+     * 7. RENDER ACTIVE QUESTION BY STAGE TYPE
+     ********************************************************************/
+    function renderCurrentQuestion(feedbackHTML = "") {
+      const q = state.questions[state.qIndex];
+      const diff = DIFFICULTIES[state.difficulty];
+
+      const stages = [
+        { num: 1, name: "1. Lexer (Coin Sorter)" },
+        { num: 2, name: "2. TS & Bug Hunt" },
+        { num: 3, name: "3. AST (Org Chart)" },
+        { num: 4, name: "4. Parser (Chevrotain)" }
+      ];
+
+      const progressHTML = `
+        <div class="stage-progress">
+          ${stages.map(s => `
+            <div class="stage-step ${q.stage === s.num ? 'active' : (q.stage > s.num ? 'done' : '')}">
+              <span>${s.name}</span>
+              <span>${q.stage === s.num ? '◀ ACTIVE' : (q.stage > s.num ? '✓' : '')}</span>
+            </div>
+          `).join("")}
+        </div>
+      `;
+
+      let interactiveBody = "";
+
+      // --- TYPE 1: COIN SORTER (LEXER) ---
+      if (q.type === "lexer-sort") {
+        interactiveBody = `
+          <div class="code-terminal">Rule Input:   ${escapeHTML(q.rule)}</div>
+
+          <div style="font-size:0.82rem; font-weight:700; color:var(--cyan); margin-bottom:6px; text-transform:uppercase;">
+            📥 Sorted Token Tray (Click a token here to remove it):
+          </div>
+          <div class="token-tray" id="lexer-tray">
+            ${state.selectedTokens.length === 0 
+              ? `<span style="color:var(--text-muted); font-size:0.88rem;">Click tokens from the pool below in left-to-right order...</span>`
+              : state.selectedTokens.map((t, idx) => `
+                <div class="token-coin" data-remove="${idx}">
+                  <span class="t-val">${escapeHTML(t.val)}</span>
+                  <span class="t-type">${t.type}</span>
+                </div>
+              `).join("")
+            }
+          </div>
+
+          <div style="font-size:0.82rem; font-weight:700; color:var(--amber); margin-bottom:6px; text-transform:uppercase;">
+            🪙 Unsorted Coin Pool ${q.distractors?.length ? '(Beware of Trap Tokens!)' : ''}:
+          </div>
+          <div class="token-pool" id="lexer-pool">
+            ${state.availableTokens.map((t, idx) => `
+              <div class="token-coin" data-pick="${idx}">
+                <span class="t-val">${escapeHTML(t.val)}</span>
+                <span class="t-type">${t.type}</span>
+              </div>
+            `).join("")}
+          </div>
+
+          <div style="display:flex; gap:12px; justify-content:flex-end;">
+            <button class="btn" id="clear-tokens-btn" ${state.locked ? 'disabled' : ''}>↺ Reset Tray</button>
+            <button class="btn btn-primary" id="submit-lexer-btn" ${state.locked ? 'disabled' : ''}>✓ Verify Token Stream</button>
+          </div>
+        `;
+      }
+
+      // --- TYPE 2: AST ORG CHART BUILDER ---
+      else if (q.type === "ast-builder") {
+        let treeLayoutHTML = "";
+
+        if (q.layout === "two-level") {
+          treeLayoutHTML = `
+            <div class="ast-row">
+              ${renderAstSlot(0, q.slots[0])}
+            </div>
+            <div style="color:var(--cyan); font-family:'JetBrains Mono'; font-weight:700;">╱ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ╲</div>
+            <div class="ast-row">
+              ${renderAstSlot(1, q.slots[1])}
+              ${renderAstSlot(2, q.slots[2])}
+            </div>
+          `;
+        } else if (q.layout === "three-level-right") {
+          treeLayoutHTML = `
+            <div class="ast-row">${renderAstSlot(0, q.slots[0])}</div>
+            <div style="color:var(--cyan); font-family:'JetBrains Mono'; font-weight:700;">╱ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ╲</div>
+            <div class="ast-row">
+              ${renderAstSlot(1, q.slots[1])}
+              ${renderAstSlot(2, q.slots[2])}
+            </div>
+            <div style="color:var(--amber); font-family:'JetBrains Mono'; font-weight:700; padding-left:220px;">╱ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ╲</div>
+            <div class="ast-row" style="padding-left:180px;">
+              ${renderAstSlot(3, q.slots[3])}
+              ${renderAstSlot(4, q.slots[4])}
+            </div>
+          `;
+        } else if (q.layout === "three-level-left") {
+          treeLayoutHTML = `
+            <div class="ast-row">${renderAstSlot(0, q.slots[0])}</div>
+            <div style="color:var(--cyan); font-family:'JetBrains Mono'; font-weight:700;">╱ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ╲</div>
+            <div class="ast-row">
+              ${renderAstSlot(1, q.slots[1])}
+              ${renderAstSlot(4, q.slots[4])}
+            </div>
+            <div style="color:var(--amber); font-family:'JetBrains Mono'; font-weight:700; padding-right:220px;">╱ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ╲</div>
+            <div class="ast-row" style="padding-right:180px;">
+              ${renderAstSlot(2, q.slots[2])}
+              ${renderAstSlot(3, q.slots[3])}
+            </div>
+          `;
+        }
+
+        interactiveBody = `
+          <div class="code-terminal">Rule Input:   ${escapeHTML(q.rule)}</div>
+          <div class="ast-diagram">
+            ${treeLayoutHTML}
+          </div>
+          <div style="font-size:0.82rem; font-weight:700; color:var(--amber); margin-bottom:8px; text-transform:uppercase;">
+            🏢 Click a Node Value to Assign to Highlighted Org Chart Slot:
+          </div>
+          <div class="token-pool">
+            ${q.choices.map(c => `
+              <button class="btn" data-ast-choice="${escapeHTML(c)}" ${state.locked ? 'disabled' : ''} style="font-family:'JetBrains Mono';">
+                [ ${escapeHTML(c)} ]
+              </button>
+            `).join("")}
+          </div>
+          <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+            <button class="btn btn-primary" id="submit-ast-btn" ${state.locked ? 'disabled' : ''}>✓ Lock In AST Org Chart</button>
+          </div>
+        `;
+      }
+
+      // --- TYPE 3: MULTIPLE CHOICE / CODE DEBUGGING ---
+      else if (q.type === "mcq") {
+        interactiveBody = `
+          ${q.code ? `<div class="code-terminal">${escapeHTML(q.code)}</div>` : ""}
+          <div class="options-grid">
+            ${q.options.map((opt, idx) => `
+              <button class="option-btn" data-opt="${idx}" ${state.locked ? 'disabled' : ''}>
+                <span style="color:var(--cyan); font-weight:800; margin-right:8px;">[${String.fromCharCode(65 + idx)}]</span>${escapeHTML(opt)}
+              </button>
+            `).join("")}
+          </div>
+        `;
+      }
+
+      appStage.innerHTML = `
+        ${progressHTML}
+        <div class="card-panel">
+          <div class="challenge-kicker">
+            <span class="kicker-tag">${q.kicker}</span>
+            <span style="font-family:'JetBrains Mono'; font-size:0.84rem; color:var(--text-muted);">
+              CHALLENGE ${state.qIndex + 1} OF ${state.questions.length}
+            </span>
+          </div>
+
+          <h2 style="font-size:1.38rem; font-weight:800; line-height:1.35; margin-bottom:8px;">
+            ${q.prompt}
+          </h2>
+
+          ${interactiveBody}
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08);">
+            <button class="btn" id="hint-btn" ${state.locked || state.hintUsedOnCurrent ? 'disabled' : ''} style="font-size:0.82rem;">
+              💡 Request Analogy Hint (${diff.hintCost === 0 ? 'FREE' : '-' + diff.hintCost + ' XP'})
+            </button>
+            <span style="font-size:0.8rem; color:var(--text-muted);">Client Brief: <b>${escapeHTML(state.clientBrief)}</b></span>
+          </div>
+
+          ${state.hintUsedOnCurrent ? `<div class="hint-box"><b>💡 Instructor Hint:</b> ${escapeHTML(q.hint)}</div>` : ""}
+          ${feedbackHTML}
+        </div>
+      `;
+
+      bindQuestionEvents(q);
+    }
+
+    function renderAstSlot(idx, slotObj) {
+      const val = state.astValues[idx] || "Click to Fill";
+      const isActive = state.activeAstSlot === idx;
+      return `
+        <div class="ast-slot ${isActive ? 'active-slot' : ''}" data-slot="${idx}">
+          <span class="slot-role">${slotObj.role}</span>
+          <span class="slot-val">${escapeHTML(val)}</span>
+        </div>
+      `;
+    }
+
+    /********************************************************************
+     * 8. EVENT HANDLERS & GRADING LOGIC
+     ********************************************************************/
+    function bindQuestionEvents(q) {
+      const diff = DIFFICULTIES[state.difficulty];
+
+      const hintBtn = document.getElementById("hint-btn");
+      if (hintBtn) {
+        hintBtn.onclick = () => {
+          sfxClick();
+          state.hintUsedOnCurrent = true;
+          state.xp = Math.max(0, state.xp - diff.hintCost);
+          updateHUD();
+          renderCurrentQuestion();
+        };
+      }
+
+      if (q.type === "lexer-sort" && !state.locked) {
+        document.querySelectorAll("[data-pick]").forEach(el => {
+          el.onclick = () => {
+            sfxClick();
+            const idx = Number(el.dataset.pick);
+            state.selectedTokens.push(state.availableTokens[idx]);
+            state.availableTokens.splice(idx, 1);
+            renderCurrentQuestion();
+          };
+        });
+
+        document.querySelectorAll("[data-remove]").forEach(el => {
+          el.onclick = () => {
+            sfxClick();
+            const idx = Number(el.dataset.remove);
+            state.availableTokens.push(state.selectedTokens[idx]);
+            state.selectedTokens.splice(idx, 1);
+            renderCurrentQuestion();
+          };
+        });
+
+        document.getElementById("clear-tokens-btn").onclick = () => {
+          sfxClick();
+          state.availableTokens.push(...state.selectedTokens);
+          state.selectedTokens = [];
+          renderCurrentQuestion();
+        };
+
+        document.getElementById("submit-lexer-btn").onclick = () => {
+          const isMatch = state.selectedTokens.length === q.target.length &&
+            state.selectedTokens.every((t, i) => t.val === q.target[i].val && t.type === q.target[i].type);
+          const expectedStr = q.target.map(t => `[${t.val}:${t.type}]`).join(" ");
+          handleAnswer(
+            isMatch,
+            isMatch
+              ? "Spot-on token stream! The Coin Sorter labeled every piece accurately."
+              : `Token mismatch! Expected: ${expectedStr}`
+          );
+        };
+      }
+
+      if (q.type === "ast-builder" && !state.locked) {
+        document.querySelectorAll("[data-slot]").forEach(el => {
+          el.onclick = () => {
+            sfxClick();
+            state.activeAstSlot = Number(el.dataset.slot);
+            renderCurrentQuestion();
+          };
+        });
+
+        document.querySelectorAll("[data-ast-choice]").forEach(el => {
+          el.onclick = () => {
+            sfxClick();
+            state.astValues[state.activeAstSlot] = el.dataset.astChoice;
+            if (state.activeAstSlot < q.slots.length - 1) {
+              state.activeAstSlot++;
+            }
+            renderCurrentQuestion();
+          };
+        });
+
+        document.getElementById("submit-ast-btn").onclick = () => {
+          const isMatch = q.slots.every((s, idx) => state.astValues[idx] === s.answer);
+          const expectedSummary = q.slots.map(s => `${s.role}: [${s.answer}]`).join(" | ");
+          handleAnswer(
+            isMatch,
+            isMatch
+              ? "AST Org Chart verified! Boss and child nodes are wired with proper precedence."
+              : `Org Chart structure error! Correct hierarchy: ${expectedSummary}`
+          );
+        };
+      }
+
+      if (q.type === "mcq" && !state.locked) {
+        document.querySelectorAll("[data-opt]").forEach(btn => {
+          btn.onclick = () => {
+            const picked = Number(btn.dataset.opt);
+            const isCorrect = picked === q.correct;
+            handleAnswer(
+              isCorrect,
+              isCorrect
+                ? "Compiler check passed! Clean logic."
+                : `Compiler error! Correct answer: ${q.options[q.correct]}`
+            );
+          };
+        });
+      }
+    }
+
+    function handleAnswer(isCorrect, message) {
+      clearInterval(state.timerId);
+      state.locked = true;
+      const diff = DIFFICULTIES[state.difficulty];
+
+      if (isCorrect) {
+        sfxSuccess();
+        state.streak++;
+        if (state.streak > state.maxStreak) state.maxStreak = state.streak;
+        state.correctCount++;
+        const timeBonus = state.timeLeft * 3;
+        const streakBonus = state.streak * 25;
+        const earned = Math.round((120 + timeBonus + streakBonus) * diff.multiplier);
+        state.xp += earned;
+        message += ` (+${earned} XP)`;
+      } else {
+        sfxError();
+        state.streak = 0;
+        state.lives--;
+      }
+
+      updateHUD();
+
+      const feedbackHTML = `
+        <div class="feedback-banner ${isCorrect ? 'correct' : 'wrong'}">
+          <div>
+            <strong>${isCorrect ? '✅ COMPILER STAGE PASSED!' : '❌ SYNTAX / PIPELINE ERROR!'}</strong>
+            <div style="font-size:0.9rem; margin-top:4px;">${escapeHTML(message)}</div>
+          </div>
+          <button class="btn ${isCorrect ? 'btn-primary' : ''}" id="next-q-btn">
+            ${(state.qIndex + 1 < state.questions.length && state.lives > 0) ? 'Next Stage ▶' : 'View Final Results 🏆'}
+          </button>
+        </div>
+      `;
+
+      renderCurrentQuestion(feedbackHTML);
+
+      document.getElementById("next-q-btn").onclick = () => {
+        sfxClick();
+        state.qIndex++;
+        loadQuestion();
+      };
+    }
+
+    /********************************************************************
+     * 9. END SCREEN & VERIFIABLE COMPLETION CERTIFICATE
+     ********************************************************************/
+    function renderEndScreen() {
+      clearInterval(state.timerId);
+      sfxFanfare();
+      const diff = DIFFICULTIES[state.difficulty];
+      const totalQ = state.questions.length;
+      const accuracy = Math.round((state.correctCount / totalQ) * 100);
+      const survived = state.lives > 0;
+
+      // Generate verifiable classroom ticket hash
+      const rawHash = `${state.playerName}-${state.difficulty}-${state.xp}-${accuracy}`;
+      let hashNum = 0;
+      for (let i = 0; i < rawHash.length; i++) {
+        hashNum = ((hashNum << 5) - hashNum) + rawHash.charCodeAt(i);
+        hashNum |= 0;
+      }
+      const verifyCode = `PLC-${diff.id.toUpperCase().slice(0,3)}-${Math.abs(hashNum).toString(16).toUpperCase().slice(0, 6)}`;
+
+      let rankTitle = "⚙️ Apprentice Tokenizer";
+      if (accuracy === 100 && state.difficulty === "expert") rankTitle = "👑 GRANDMASTER COMPILER ARCHITECT";
+      else if (state.difficulty === "expert" && survived) rankTitle = "🔥 Certified Expert Rule Engine Architect";
+      else if (accuracy >= 80) rankTitle = "🚀 Senior AST & Chevrotain Engineer";
+      else if (accuracy >= 60) rankTitle = "🪙 Certified Pipeline Builder";
+
+      appStage.innerHTML = `
+        <div class="card-panel">
+          <div style="text-align:center; margin-bottom:18px;">
+            <span class="kicker-tag">${survived ? 'MIDTERM CAMPAIGN COMPLETE' : 'PIPELINE HALTED · OUT OF LIVES'}</span>
+            <h1 style="font-size:2.2rem; font-weight:900; margin-top:10px;">
+              ${survived ? '🎉 Midterm Compiler Quest Cleared!' : '💥 Compiler Crashed — Try Again!'}
+            </h1>
+          </div>
+
+          <!-- PRINTABLE / SCREENSHOT CERTIFICATE -->
+          <div class="cert-card">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; border-bottom:1px solid rgba(255,255,255,0.15); padding-bottom:16px;">
+              <div>
+                <div style="font-family:'JetBrains Mono'; font-size:0.78rem; color:var(--cyan); font-weight:800;">
+                  PROGRAMMING LANGUAGES WITH COMPILER · INSTRUCTOR: RON HEDWIG
+                </div>
+                <h2 style="font-size:1.6rem; font-weight:900; margin-top:4px;">${escapeHTML(state.playerName)}</h2>
+                <div style="font-size:0.9rem; color:var(--text-muted); margin-top:2px;">${escapeHTML(state.clientBrief)}</div>
+              </div>
+              <div style="text-align:right;">
+                <span class="kicker-tag" style="font-size:0.85rem;">${diff.label}</span>
+                <div style="font-family:'JetBrains Mono'; font-size:0.78rem; color:var(--text-muted); margin-top:6px;">
+                  VERIFY CODE: <b>${verifyCode}</b>
+                </div>
+              </div>
+            </div>
+
+            <div class="diff-grid" style="margin-top:20px; margin-bottom:10px;">
+              <div class="info-card" style="background:rgba(0,0,0,0.25); padding:14px; border-radius:12px;">
+                <div style="font-size:0.75rem; color:var(--text-muted);">FINAL SCORE</div>
+                <div style="font-size:1.65rem; font-weight:900; color:var(--cyan); font-family:'JetBrains Mono';">${state.xp} XP</div>
+              </div>
+              <div class="info-card" style="background:rgba(0,0,0,0.25); padding:14px; border-radius:12px;">
+                <div style="font-size:0.75rem; color:var(--text-muted);">ACCURACY</div>
+                <div style="font-size:1.65rem; font-weight:900; color:var(--emerald); font-family:'JetBrains Mono';">${accuracy}% (${state.correctCount}/${totalQ})</div>
+              </div>
+              <div class="info-card" style="background:rgba(0,0,0,0.25); padding:14px; border-radius:12px;">
+                <div style="font-size:0.75rem; color:var(--text-muted);">MAX STREAK</div>
+                <div style="font-size:1.65rem; font-weight:900; color:var(--amber); font-family:'JetBrains Mono';">${state.maxStreak}x 🔥</div>
+              </div>
+              <div class="info-card" style="background:rgba(0,0,0,0.25); padding:14px; border-radius:12px;">
+                <div style="font-size:0.75rem; color:var(--text-muted);">EARNED RANK</div>
+                <div style="font-size:0.95rem; font-weight:800; color:#fff; margin-top:4px;">${rankTitle}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:22px;">
+            <button class="btn" onclick="window.print()">🖨️ Print / Save Certificate as PDF</button>
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+              <button class="btn" id="change-diff-btn">⚙️ Change Difficulty</button>
+              ${state.difficulty !== "expert" ? `
+                <button class="btn btn-expert" id="try-expert-btn">🔥 Challenge Expert Architect Mode</button>
+              ` : `
+                <button class="btn btn-primary" id="replay-btn">↺ Replay Expert Mode</button>
+              `}
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("change-diff-btn").onclick = () => renderStartScreen();
+      const tryExpertBtn = document.getElementById("try-expert-btn");
+      if (tryExpertBtn) {
+        tryExpertBtn.onclick = () => {
+          state.difficulty = "expert";
+          startGame("expert");
+        };
+      }
+      const replayBtn = document.getElementById("replay-btn");
+      if (replayBtn) {
+        replayBtn.onclick = () => startGame(state.difficulty);
+      }
+    }
+
+    function escapeHTML(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    // Boot Arcade
+    renderStartScreen();
+  </script>
+</body>
+</html>
