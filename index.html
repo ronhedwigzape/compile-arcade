@@ -3,85 +3,535 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Compiler Arcade: Lexer to AST Quest | PLC Midterm Review</title>
+  <title>PLC Course Hub & AST Arcade (Weeks 1–4) | Ron Hedwig</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-deep: #070a12;
-      --bg-panel: #101726;
-      --bg-card: #182238;
-      --bg-code: #060911;
+      --bg-base: #0b0f19;
+      --bg-surface: #131b2e;
+      --bg-card: #1c2742;
+      --bg-code: #090d16;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
-      --cyan: #38bdf8;
-      --indigo: #6366f1;
-      --emerald: #10b981;
-      --amber: #f59e0b;
-      --rose: #f43f5e;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.2);
+      --primary: #6366f1;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #f43f5e;
       --purple: #a855f7;
       --border: #263554;
-      --radius: 16px;
+      --radius: 14px;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
+    
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: var(--bg-deep);
-      background-image: 
-        radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.12), transparent 40%),
-        radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.12), transparent 40%),
-        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+      background-color: var(--bg-base);
       color: var(--text-main);
-      min-height: 100vh;
+      height: 100vh;
       display: flex;
       flex-direction: column;
-      overflow-x: hidden;
+      overflow: hidden;
     }
 
-    /* TOP HUD NAVBAR */
-    header.hud-bar {
-      height: 68px;
-      background: rgba(16, 23, 38, 0.92);
+    /* TOP NAVIGATION BAR */
+    header.navbar {
+      height: 62px;
+      background: rgba(19, 27, 46, 0.94);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
-      padding: 0 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      position: sticky;
-      top: 0;
+      padding: 0 20px;
       z-index: 100;
+      flex-shrink: 0;
+      overflow-x: auto;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 12px;
-      font-weight: 900;
-      font-size: 1.05rem;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 0.96rem;
       letter-spacing: -0.02em;
+      white-space: nowrap;
     }
 
     .brand-badge {
-      background: linear-gradient(135deg, var(--cyan), var(--indigo));
-      color: #070a12;
-      padding: 5px 10px;
-      border-radius: 8px;
-      font-family: 'JetBrains Mono', monospace;
+      background: linear-gradient(135deg, var(--accent), var(--primary));
+      color: #0b0f19;
+      padding: 4px 10px;
+      border-radius: 6px;
       font-weight: 800;
-      font-size: 0.78rem;
+      font-size: 0.76rem;
+      font-family: 'JetBrains Mono', monospace;
     }
 
-    .hud-stats {
+    .nav-links {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
       display: flex;
       align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .nav-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-btn.active {
+      color: var(--accent);
+      background: var(--accent-glow);
+      border-color: rgba(56, 189, 248, 0.35);
+    }
+
+    .nav-btn.arcade-highlight {
+      border-color: rgba(245, 158, 11, 0.45);
+      color: #fde68a;
+      background: rgba(245, 158, 11, 0.12);
+    }
+
+    .nav-btn.arcade-highlight.active {
+      background: linear-gradient(135deg, var(--warning), var(--danger));
+      color: #090d16;
+      font-weight: 800;
+      border-color: transparent;
+    }
+
+    /* MAIN VIEWPORT */
+    main#app-viewport {
+      flex: 1;
+      position: relative;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* SLIDE DECK ENGINE */
+    .presentation-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 62px);
+      overflow: hidden;
+      background: radial-gradient(circle at 85% 15%, rgba(99, 102, 241, 0.12), transparent 45%),
+                  radial-gradient(circle at 15% 85%, rgba(56, 189, 248, 0.1), transparent 45%);
+    }
+
+    .slide-stage {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 40px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .slide-card {
+      width: 100%;
+      max-width: 1180px;
+      height: 100%;
+      max-height: 680px;
+      background: rgba(19, 27, 46, 0.88);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 42px 54px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+      position: relative;
+      overflow-y: auto;
+      animation: slideEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideEnter {
+      from { opacity: 0; transform: translateY(12px) scale(0.985); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .slide-card.title-slide {
+      background: linear-gradient(135deg, #131b2e 0%, #1e1b4b 100%);
+      border-color: rgba(99, 102, 241, 0.45);
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .slide-top-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+
+    .slide-kicker {
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      background: var(--accent-glow);
+      padding: 5px 12px;
+      border-radius: 99px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .slide-counter-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .slide-headline {
+      font-size: 2.3rem;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.025em;
+      margin-bottom: 14px;
+      color: #ffffff;
+    }
+
+    .title-slide .slide-headline {
+      font-size: 3.1rem;
+      margin-top: 12px;
+    }
+
+    .slide-sub {
+      font-size: 1.16rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 22px;
+    }
+
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 18px;
+      width: 100%;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .info-card {
+      background: rgba(28, 39, 66, 0.72);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 22px;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .info-card:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    .info-card h4 {
+      font-size: 1.05rem;
+      color: var(--accent);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .info-card p {
+      font-size: 0.95rem;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+
+    .analogy-box {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(99, 102, 241, 0.12));
+      border-left: 4px solid var(--warning);
+      padding: 16px 20px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+    }
+
+    .analogy-box .analogy-label {
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--warning);
+      margin-bottom: 4px;
+    }
+
+    .code-block {
+      background: var(--bg-code);
+      border: 1px solid #1e293b;
+      border-radius: var(--radius);
+      padding: 18px 22px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      color: #e2e8f0;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    .step-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(28, 39, 66, 0.55);
+      border: 1px solid var(--border);
+      padding: 12px 18px;
+      border-radius: 12px;
+    }
+
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.9rem;
+    }
+
+    .step-num.check { background: var(--success); }
+
+    /* 3-STAGE PIPELINE BAR (STRICTLY UP TO AST) */
+    .pipeline-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
       gap: 12px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .pipe-step {
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .pipe-step.active {
+      background: var(--accent-glow);
+      border-color: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+    }
+
+    .pipe-step.done {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #6ee7b7;
+    }
+
+    /* SLIDE CONTROLS FOOTER */
+    .slide-controls {
+      height: 62px;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      flex-shrink: 0;
+    }
+
+    .ctrl-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: #263554;
+      border-color: var(--accent);
+    }
+
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--primary));
+      color: #090d16;
+      font-weight: 800;
+      border: none;
+    }
+
+    .btn-expert {
+      background: linear-gradient(135deg, var(--danger), var(--warning));
+      color: #090d16;
+      font-weight: 900;
+      border: none;
+    }
+
+    select.week-select, .input-field, textarea.code-input {
+      background: var(--bg-code);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .input-field, textarea.code-input {
+      width: 100%;
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 8px;
+    }
+
+    /* PAGE CONTAINER */
+    .page-container {
+      max-width: 1180px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 30px 24px 80px;
+    }
+
+    .page-header {
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
       flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .page-header h1 { font-size: 1.95rem; font-weight: 800; }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      background: var(--accent-glow);
+      color: var(--accent);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* TOKEN CHIPS & ARCADE INTERACTIVES */
+    .token-chip, .token-coin {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--bg-card);
+      border: 2px solid var(--accent);
+      border-radius: 10px;
+      padding: 8px 14px;
+      margin: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+
+    .token-coin { cursor: pointer; }
+    .token-coin:hover { transform: translateY(-3px); background: rgba(56, 189, 248, 0.18); }
+    .token-chip .t-val, .token-coin .t-val { font-weight: 800; color: #fff; font-size: 0.95rem; }
+    .token-chip .t-type, .token-coin .t-type { font-size: 0.68rem; color: var(--accent); font-weight: 700; margin-top: 2px; }
+
+    .token-tray {
+      min-height: 76px;
+      background: rgba(9, 13, 22, 0.85);
+      border: 2px dashed var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    /* ARCADE DIFFICULTY CARDS & HUD */
+    .arcade-hud {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(19, 27, 46, 0.9);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 18px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
     .hud-pill {
@@ -90,457 +540,370 @@
       padding: 6px 14px;
       border-radius: 999px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       font-weight: 700;
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 8px;
-    }
-
-    .hud-pill.xp { border-color: rgba(56, 189, 248, 0.4); color: var(--cyan); }
-    .hud-pill.streak { border-color: rgba(245, 158, 11, 0.4); color: var(--amber); }
-    .hud-pill.lives { border-color: rgba(244, 63, 94, 0.4); color: var(--rose); }
-    .hud-pill.timer { border-color: rgba(168, 85, 247, 0.4); color: #e9d5ff; min-width: 92px; justify-content: center; }
-    .hud-pill.timer.danger { background: rgba(244, 63, 94, 0.25); border-color: var(--rose); color: #fda4af; animation: pulse 0.6s infinite alternate; }
-
-    @keyframes pulse {
-      from { transform: scale(1); }
-      to { transform: scale(1.06); }
-    }
-
-    /* MAIN CONTAINER */
-    main.game-stage {
-      flex: 1;
-      max-width: 1140px;
-      width: 100%;
-      margin: 0 auto;
-      padding: 28px 20px 60px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-
-    .card-panel {
-      background: rgba(16, 23, 38, 0.9);
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      padding: 34px 38px;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
-      position: relative;
-      animation: fadeSlide 0.28s ease-out;
-    }
-
-    @keyframes fadeSlide {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* DIFFICULTY SELECTOR CARDS */
-    .diff-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
-      margin: 16px 0 24px;
+      gap: 6px;
     }
 
     .diff-card {
-      background: rgba(24, 34, 56, 0.65);
+      background: rgba(28, 39, 66, 0.65);
       border: 2px solid var(--border);
       border-radius: 14px;
       padding: 16px;
       cursor: pointer;
       transition: all 0.2s ease;
-      position: relative;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
 
-    .diff-card:hover {
-      transform: translateY(-3px);
-      background: rgba(24, 34, 56, 0.95);
-    }
+    .diff-card:hover { transform: translateY(-3px); background: rgba(28, 39, 66, 0.95); }
+    .diff-card.selected.intern { border-color: var(--success); box-shadow: 0 0 22px rgba(16, 185, 129, 0.25); }
+    .diff-card.selected.junior { border-color: var(--accent); box-shadow: 0 0 22px rgba(56, 189, 248, 0.25); }
+    .diff-card.selected.senior { border-color: var(--purple); box-shadow: 0 0 22px rgba(168, 85, 247, 0.25); }
+    .diff-card.selected.expert { border-color: var(--danger); box-shadow: 0 0 26px rgba(244, 63, 94, 0.35); background: linear-gradient(145deg, rgba(244, 63, 94, 0.15), rgba(28, 39, 66, 0.95)); }
 
-    .diff-card.selected.intern { border-color: var(--emerald); box-shadow: 0 0 24px rgba(16, 185, 129, 0.25); }
-    .diff-card.selected.junior { border-color: var(--cyan); box-shadow: 0 0 24px rgba(56, 189, 248, 0.25); }
-    .diff-card.selected.senior { border-color: var(--purple); box-shadow: 0 0 24px rgba(168, 85, 247, 0.25); }
-    .diff-card.selected.expert { 
-      border-color: var(--rose); 
-      background: linear-gradient(145deg, rgba(244, 63, 94, 0.16), rgba(24, 34, 56, 0.95));
-      box-shadow: 0 0 28px rgba(244, 63, 94, 0.35); 
-    }
-
-    .diff-badge {
-      display: inline-block;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      padding: 3px 8px;
-      border-radius: 6px;
-      margin-bottom: 8px;
-      width: fit-content;
-    }
-
-    .diff-card h3 { font-size: 1.08rem; font-weight: 800; margin-bottom: 6px; }
-    .diff-card p { font-size: 0.82rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 12px; }
-    .diff-meta {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.74rem;
-      color: #cbd5e1;
-      border-top: 1px solid rgba(255,255,255,0.08);
-      padding-top: 8px;
-    }
-
-    /* INPUTS & BUTTONS */
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 20px;
-    }
-
-    .input-group label {
-      display: block;
-      font-size: 0.82rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--cyan);
-      margin-bottom: 6px;
-    }
-
-    .input-ctrl {
-      width: 100%;
-      background: var(--bg-code);
-      border: 1px solid var(--border);
-      color: var(--text-main);
-      padding: 12px 14px;
-      border-radius: 10px;
-      font-size: 0.95rem;
-      font-family: inherit;
-      outline: none;
-    }
-
-    .input-ctrl:focus { border-color: var(--cyan); }
-
-    .btn {
-      background: var(--bg-card);
-      color: var(--text-main);
-      border: 1px solid var(--border);
-      padding: 11px 20px;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 0.92rem;
-      cursor: pointer;
-      transition: all 0.16s ease;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .btn:hover:not(:disabled) {
-      border-color: var(--cyan);
-      transform: translateY(-1px);
-    }
-
-    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-
-    .btn-primary {
-      background: linear-gradient(135deg, var(--cyan), var(--indigo));
-      color: #070a12;
-      border: none;
-      font-weight: 800;
-    }
-
-    .btn-expert {
-      background: linear-gradient(135deg, var(--rose), var(--amber));
-      color: #070a12;
-      border: none;
-      font-weight: 900;
-    }
-
-    /* 3-STAGE PIPELINE PROGRESS BAR (UP TO AST ONLY) */
-    .stage-progress {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 22px;
-    }
-
-    .stage-step {
-      background: rgba(16, 23, 38, 0.75);
-      border: 1px solid var(--border);
-      padding: 12px 16px;
-      border-radius: 12px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .stage-step.active {
-      border-color: var(--cyan);
-      background: rgba(56, 189, 248, 0.14);
-      color: #fff;
-      box-shadow: 0 0 18px rgba(56, 189, 248, 0.2);
-    }
-
-    .stage-step.done {
-      border-color: rgba(16, 185, 129, 0.5);
-      background: rgba(16, 185, 129, 0.12);
-      color: #6ee7b7;
-    }
-
-    /* CHALLENGE HEADER & CODE DISPLAY */
-    .challenge-kicker {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .kicker-tag {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.78rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      padding: 4px 12px;
-      border-radius: 99px;
-      background: rgba(56, 189, 248, 0.15);
-      color: var(--cyan);
-      border: 1px solid rgba(56, 189, 248, 0.35);
-    }
-
-    .code-terminal {
-      background: var(--bg-code);
-      border: 1px solid #1e293b;
-      border-radius: 14px;
-      padding: 18px 22px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.95rem;
-      line-height: 1.6;
-      color: #e2e8f0;
-      margin: 14px 0 20px;
-      overflow-x: auto;
-      white-space: pre-wrap;
-      box-shadow: inset 0 3px 12px rgba(0,0,0,0.6);
-    }
-
-    /* STAGE 1: COIN SORTER (LEXER) BUCKETS */
-    .token-tray {
-      min-height: 78px;
-      background: rgba(6, 9, 17, 0.8);
-      border: 2px dashed var(--border);
-      border-radius: 14px;
-      padding: 12px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 18px;
-    }
-
-    .token-pool {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    .token-coin {
-      background: var(--bg-card);
-      border: 2px solid var(--cyan);
-      border-radius: 10px;
-      padding: 8px 14px;
-      font-family: 'JetBrains Mono', monospace;
-      cursor: pointer;
-      display: inline-flex;
-      flex-direction: column;
-      align-items: center;
-      transition: all 0.15s ease;
-      user-select: none;
-    }
-
-    .token-coin:hover {
-      transform: translateY(-3px);
-      background: rgba(56, 189, 248, 0.18);
-    }
-
-    .token-coin .t-val { font-size: 0.95rem; font-weight: 800; color: #fff; }
-    .token-coin .t-type { font-size: 0.68rem; font-weight: 700; color: var(--cyan); margin-top: 2px; }
-
-    /* STAGE 3: AST ORG CHART VISUALIZER */
     .ast-diagram {
-      background: rgba(6, 9, 17, 0.78);
+      background: rgba(9, 13, 22, 0.85);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 24px;
-      margin: 16px 0 22px;
+      padding: 22px;
+      margin: 14px 0 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
     }
 
     .ast-row {
       display: flex;
       justify-content: center;
-      gap: 28px;
+      gap: 24px;
       width: 100%;
       flex-wrap: wrap;
     }
 
     .ast-slot {
-      min-width: 210px;
-      padding: 12px 16px;
+      min-width: 205px;
+      padding: 11px 15px;
       border-radius: 12px;
       background: var(--bg-card);
-      border: 2px dashed var(--cyan);
+      border: 2px dashed var(--accent);
       text-align: center;
       cursor: pointer;
       font-family: 'JetBrains Mono', monospace;
-      transition: all 0.15s ease;
     }
 
     .ast-slot.active-slot {
       border-style: solid;
-      border-color: var(--amber);
-      box-shadow: 0 0 18px rgba(245, 158, 11, 0.35);
+      border-color: var(--warning);
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.35);
     }
 
-    .ast-slot .slot-role {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      display: block;
-      margin-bottom: 4px;
-    }
-
-    .ast-slot .slot-val {
-      font-size: 0.95rem;
-      font-weight: 800;
-      color: #fff;
-    }
-
-    /* MULTIPLE CHOICE / CODE OPTIONS */
-    .options-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin: 16px 0;
-    }
+    .ast-slot .slot-role { font-size: 0.68rem; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px; }
+    .ast-slot .slot-val { font-size: 0.94rem; font-weight: 800; color: #fff; }
 
     .option-btn {
-      background: rgba(24, 34, 56, 0.75);
+      background: rgba(28, 39, 66, 0.75);
       border: 2px solid var(--border);
       border-radius: 12px;
-      padding: 15px 18px;
+      padding: 14px 16px;
       text-align: left;
       color: var(--text-main);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.86rem;
+      font-size: 0.85rem;
       line-height: 1.5;
       cursor: pointer;
-      transition: all 0.15s ease;
       white-space: pre-wrap;
+      transition: all 0.15s ease;
     }
 
-    .option-btn:hover:not(:disabled) {
-      border-color: var(--cyan);
-      background: rgba(56, 189, 248, 0.1);
-    }
+    .option-btn:hover:not(:disabled) { border-color: var(--accent); background: rgba(56, 189, 248, 0.1); }
 
-    /* FEEDBACK TOAST & ANALOGY BOX */
     .feedback-banner {
-      padding: 16px 20px;
+      padding: 15px 18px;
       border-radius: 12px;
       margin-top: 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      animation: fadeSlide 0.2s ease-out;
     }
 
-    .feedback-banner.correct {
-      background: rgba(16, 185, 129, 0.16);
-      border: 1px solid var(--emerald);
-      color: #a7f3d0;
+    .feedback-banner.correct { background: rgba(16, 185, 129, 0.16); border: 1px solid var(--success); color: #a7f3d0; }
+    .feedback-banner.wrong { background: rgba(244, 63, 94, 0.16); border: 1px solid var(--danger); color: #fecdd3; }
+
+    /* PRINTABLE EXAM SHEETS */
+    .print-toolbar {
+      background: rgba(28, 39, 66, 0.85);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 16px 22px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
     }
 
-    .feedback-banner.wrong {
-      background: rgba(244, 63, 94, 0.16);
-      border: 1px solid var(--rose);
-      color: #fecdd3;
+    .exam-sheets-wrapper { display: flex; flex-direction: column; gap: 32px; }
+
+    .exam-paper {
+      background: #ffffff;
+      color: #0f172a;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 40px 48px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
     }
 
-    .hint-box {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(99, 102, 241, 0.12));
-      border-left: 4px solid var(--amber);
+    .exam-paper.hidden-exam { display: none; }
+
+    .exam-header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+    }
+
+    .exam-header-top h2 { font-size: 1.3rem; font-weight: 800; color: #0f172a; }
+    .exam-header-top p { font-size: 0.86rem; color: #334155; margin-top: 2px; }
+
+    .exam-score-box {
+      border: 2px solid #0f172a;
+      padding: 8px 16px;
+      text-align: center;
+      min-width: 120px;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .exam-meta-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1.2fr 0.8fr;
+      gap: 16px;
+      margin-bottom: 24px;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .exam-meta-line { border-bottom: 1px solid #334155; padding-bottom: 4px; }
+    .exam-section { margin-bottom: 22px; }
+    .exam-section h3 { font-size: 0.98rem; font-weight: 800; margin-bottom: 6px; color: #0f172a; text-transform: uppercase; }
+    .exam-section p.exam-prompt { font-size: 0.9rem; color: #1e293b; margin-bottom: 10px; line-height: 1.45; }
+
+    .exam-code {
+      background: #f8fafc;
+      border: 1px solid #94a3b8;
+      border-radius: 6px;
       padding: 12px 16px;
-      border-radius: 0 10px 10px 0;
-      margin-top: 12px;
-      font-size: 0.9rem;
-      color: #fde68a;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.84rem;
+      color: #0f172a;
+      white-space: pre-wrap;
+      margin-bottom: 12px;
     }
 
-    /* CERTIFICATE / COMPLETION CARD */
-    .cert-card {
-      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-      border: 2px solid var(--cyan);
-      border-radius: 20px;
-      padding: 32px;
-      margin: 20px 0;
-      position: relative;
-      overflow: hidden;
+    .exam-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+    .exam-table th, .exam-table td { border: 1px solid #475569; padding: 8px 12px; text-align: left; font-size: 0.85rem; height: 34px; }
+    .exam-table th { background: #f1f5f9; font-weight: 700; }
+
+    .exam-draw-box {
+      border: 1.5px dashed #475569;
+      border-radius: 8px;
+      height: 185px;
+      width: 100%;
+      padding: 10px;
+      font-size: 0.78rem;
+      color: #64748b;
+      margin-bottom: 12px;
     }
 
-    @media (max-width: 860px) {
-      .diff-grid, .form-row, .options-grid, .stage-progress {
-        grid-template-columns: 1fr;
-      }
-      .card-panel { padding: 22px; }
-    }
+    .exam-lined-area { display: flex; flex-direction: column; gap: 18px; padding-top: 8px; margin-bottom: 14px; }
+    .exam-line { border-bottom: 1px solid #64748b; height: 18px; width: 100%; }
+
+    @page { size: A4 portrait; margin: 14mm 16mm; }
 
     @media print {
-      header.hud-bar, .no-print { display: none !important; }
-      body { background: #fff; color: #000; }
-      .cert-card { border: 2px solid #000; color: #000; background: #fff; }
+      html, body, main#app-viewport {
+        height: auto !important;
+        overflow: visible !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        display: block !important;
+      }
+      header.navbar, .no-print, .print-toolbar, .page-header, .slide-controls, .arcade-hud { display: none !important; }
+      .page-container { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+      .exam-paper { border: none !important; box-shadow: none !important; padding: 0 !important; page-break-after: always !important; }
+      .exam-paper:last-of-type { page-break-after: auto !important; }
+      .exam-paper.hidden-exam { display: none !important; }
+    }
+
+    @media (max-width: 920px) {
+      .grid-2, .grid-3, .grid-4, .exam-meta-grid, .pipeline-bar { grid-template-columns: 1fr; }
+      .slide-card { padding: 24px; max-height: none; }
+      .slide-headline { font-size: 1.65rem; }
     }
   </style>
 </head>
 <body>
 
-  <!-- TOP HUD -->
-  <header class="hud-bar">
+  <!-- TOP NAVIGATION (SCOPED UP TO AST ONLY) -->
+  <header class="navbar">
     <div class="brand">
-      <span class="brand-badge">PLC · MIDTERM ARCADE</span>
-      <span>Lexer to AST Compiler Quest</span>
+      <span class="brand-badge">PLC · WEEKS 1–4</span>
+      <span>Lexer to AST Course Hub</span>
     </div>
-
-    <div class="hud-stats" id="hud-stats" style="display:none;">
-      <div class="hud-pill" id="hud-diff-badge">🟢 INTERN</div>
-      <div class="hud-pill xp">⚡ <span id="hud-xp">0</span> XP</div>
-      <div class="hud-pill streak">🔥 <span id="hud-streak">0</span>x</div>
-      <div class="hud-pill lives" id="hud-lives">❤️❤️❤️</div>
-      <div class="hud-pill timer" id="hud-timer">⏱️ 30s</div>
-      <button class="btn" id="sound-toggle" style="padding:6px 12px; font-size:0.8rem;">🔊 SFX</button>
-      <button class="btn" id="quit-btn" style="padding:6px 12px; font-size:0.8rem;">🏠 Menu</button>
-    </div>
+    <nav class="nav-links" id="main-nav">
+      <a href="#/slides" class="nav-btn active" data-route="slides">🖥️ Slides (W1–W4: Up to AST)</a>
+      <a href="#/arcade" class="nav-btn arcade-highlight" data-route="arcade">🕹️ Midterm AST Arcade</a>
+      <a href="#/playground" class="nav-btn" data-route="playground">⚡ Lexer → AST Playground</a>
+      <a href="#/briefs" class="nav-btn" data-route="briefs">📋 Client Briefs</a>
+      <a href="#/quizzes" class="nav-btn" data-route="quizzes">📝 Exams & TS Lab</a>
+      <a href="#/guides" class="nav-btn" data-route="guides">🧭 Analogies (Up to AST)</a>
+      <a href="#/keys" class="nav-btn" data-route="keys">🔑 Answer Keys</a>
+    </nav>
   </header>
 
-  <!-- MAIN STAGE -->
-  <main class="game-stage" id="app-stage"></main>
+  <!-- DYNAMIC APP CONTAINER -->
+  <main id="app-viewport"></main>
 
   <script>
     /********************************************************************
-     * 1. WEB AUDIO SYNTHESIZER (NO EXTERNAL ASSETS REQUIRED)
+     * 1. SLIDE DECK DATASET — STRICTLY WEEKS 1 TO 4 (SLIDES 1–32: UP TO AST)
+     ********************************************************************/
+    const SLIDES = [
+      // ================= WEEK 1: KICKOFF & JS BASICS =================
+      { s: 1, w: 1, type: "title", kicker: "WEEK 1 · COURSE KICKOFF", title: "The big picture: what a compiler does", sub: "Just enough JavaScript, and how text turns into tokens and an AST tree.", pipe: 1 },
+      { s: 2, w: 1, kicker: "THE POINT OF THIS COURSE", title: "Why we're building this", sub: "You're building the core front-end of a compiler — turning human rules into a structured AST tree.", cards: [
+        { h: "🌍 It's everywhere", p: "Search filters, loan approvals, invoice routers, and pricing rules all start by turning text into tokens and an Abstract Syntax Tree (AST)." },
+        { h: "🧠 It makes you a better developer", p: "Once you see how text becomes labeled tokens and a structured tree, every programming language makes more sense." },
+        { h: "💼 Clients pay for it", p: "Businesses need configurable rule engines where staff can type rules without calling an engineer to edit hardcoded if-statements." }
+      ]},
+      { s: 3, w: 1, kicker: "WEEK 1 · ROADMAP", title: "Today's plan", steps: [
+        "See the steps that turn raw rule text into a structured AST tree",
+        "Learn just enough JavaScript to write a rule by hand",
+        "Form your team and pick your client project brief"
+      ], pipe: 1 },
+      { s: 4, w: 1, kicker: "WEEK 1 · PLAIN-ENGLISH TERMS", title: "Words to know", cards: [
+        { h: "Compiler Front-End", p: "A program that reads text a person wrote, breaks it into labeled tokens, and organizes them into a tree structure.\n💡 Like: a translator organizing a sentence into subject, verb, and object." },
+        { h: "Pipeline (Up to Midterm)", p: "The steps our rule passes through from raw text to a structured tree: 1. Lexer (Tokens) → 2. TypeScript Types → 3. AST (Tree).\n💡 Like: an assembly line where each station does one clear job." }
+      ]},
+      { s: 5, w: 1, kicker: "WEEK 1 · THE CORE IDEA", title: "A computer reads a rule the way you read a sentence", sub: "Up to Midterms, we focus on turning a flat string of characters into labeled tokens and an AST Org Chart.", analogy: { title: "EVERYDAY ANALOGY · Reading 'price > 100'", text: "First your eyes split the sentence into individual words and symbols (the Lexer / Coin Sorter). Next, you label what kind of data is allowed (TypeScript Labeled Jars). Finally, you organize them into a hierarchy showing who is the boss (the AST Org Chart)." }, pipe: 1 },
+      { s: 6, w: 1, kicker: "WEEK 1 · JAVASCRIPT BASICS", title: "An if-statement is already a tiny rule", code: `// RUN THIS IN NODE\nlet price = 150;\nlet category = "Electronics";\n\nif (price > 100 && category === "Electronics") {\n  console.log("Matches!");\n} else {\n  console.log("No match.");\n}`, analogy: { title: "THE POINT · This rule is hardcoded", text: "Right now only a programmer can change this rule. Our goal is to let a user type `price > 100 AND category = \"Electronics\"` as text, tokenize it, and build an AST tree from it." } },
+      { s: 7, w: 1, kicker: "WEEK 1 · GOALS", title: "By the end of this week, you can…", cards: [
+        { h: "1. Write a short script", p: "Using variables, comparisons (>, <, ===), and if / else." },
+        { h: "2. Explain our pipeline", p: "Raw Text → Labeled Tokens (Lexer) → Typed Nodes (TS) → AST Tree." },
+        { h: "3. Form your team & pick a brief", p: "Group 1 (Product Filter), Group 2 (Eligibility Checker), or Group 3 (Invoice Generator)." }
+      ]},
+      { s: 8, w: 1, kicker: "WEEK 1 · YOUR PROJECT", title: "Kick-off: team + project", sub: "Form your group and choose one client brief. You keep the same brief as you build your Lexer and AST.", checks: [
+        "Team formed and assigned to a Client Brief",
+        "Client domain fields understood",
+        "Everyone can run a .js file with Node"
+      ]},
+      { s: 9, w: 1, kicker: "WEEK 1 · WRAP-UP", title: "Recap — and what's next", checks: [
+        "Saw the pipeline: Text → Tokens (Lexer) → Typed AST Tree",
+        "Wrote a hardcoded rule with an if-statement",
+        "Formed teams and picked your client project"
+      ], analogy: { title: "NEXT WEEK · STEP 1: THE LEXER", text: "We build Step 1 — the Lexer (Coin Sorter). You'll turn a line of text into a list of labeled pieces called tokens." } },
+
+      // ================= WEEK 2: STEP 1 — THE LEXER =================
+      { s: 10, w: 2, type: "title", kicker: "WEEK 2 · THE LEXER", title: "Step 1 — Tokenizing: tearing text into pieces", sub: "Turn a line of text into a list of small, labeled tokens.", pipe: 1 },
+      { s: 11, w: 2, kicker: "WEEK 2 · ROADMAP", title: "Today's plan", steps: [
+        "Understand what a 'token' is (with the Coin Sorter analogy)",
+        "Follow how a tokenizer works, step by step",
+        "Adapt the starter tokenizer to your own project"
+      ], pipe: 1 },
+      { s: 12, w: 2, kicker: "WEEK 2 · PLAIN-ENGLISH TERMS", title: "Words to know", cards: [
+        { h: "Lexer (also called the tokenizer)", p: "The step that breaks your text into small, labeled pieces.\n💡 Like: a coin sorter dropping coins into labeled trays." },
+        { h: "Token", p: "One labeled piece of text — a value plus its category.\n💡 Like: a word with a sticky-note saying what kind of word it is." }
+      ]},
+      { s: 13, w: 2, kicker: "WEEK 2 · WHAT IS A TOKEN?", title: "A token is a small piece of text with a label", code: `Input Text:   price > 100\n              ↓ the lexer tears it into labeled tokens\n[ price : FIELD ]   [ > : GT ]   [ 100 : NUMBER ]`, analogy: { title: "EVERYDAY ANALOGY · A Coin Sorter", text: "The lexer sorts text like a mechanical coin sorter dropping quarters and dimes into labeled trays — numbers here, operators there, field names over there. Important: the lexer does NOT understand hierarchy yet. It only produces a flat list of labeled pieces." } },
+      { s: 14, w: 2, kicker: "WEEK 2 · THE METHOD", title: "How the tokenizer works, step by step", sub: "It reads the text one character at a time, and for each character asks a few simple questions:", steps: [
+        "Look at the current character — start at index 0, move left to right",
+        "Is it a space? → skip it (i++ and continue)",
+        "Is it a digit? → grab the whole number until digits end, make one NUMBER token",
+        "Is it an operator, quoted string, or word? → make that token (GT, GTE, STRING, AND, OR, FIELD)",
+        "Repeat until the text runs out — you end with a flat array of tokens"
+      ]},
+      { s: 15, w: 2, kicker: "WEEK 2 · THE CODE", title: "The same steps, now in code", code: `function tokenize(input) {\n  const tokens = [];\n  let i = 0;\n  while (i < input.length) {\n    const char = input[i];\n    if (/\\s/.test(char)) { i++; continue; }\n    if (/[0-9]/.test(char)) {\n      let num = "";\n      while (/[0-9]/.test(input[i])) { num += input[i]; i++; }\n      tokens.push({ type: "NUMBER", value: Number(num) });\n      continue;\n    }\n    if (char === ">") {\n      tokens.push({ type: "GT", value: ">" }); i++; continue;\n    }\n    i++;\n  }\n  return tokens;\n}`, analogy: { title: "MATCH IT TO THE STEPS · Same 5 questions", text: "The while-loop is 'repeat until text runs out.' Always remember to advance `i++` before `continue` so your loop never gets stuck!" } },
+      { s: 16, w: 2, kicker: "WEEK 2 · GOALS", title: "By the end of this week, you can…", cards: [
+        { h: "Explain what a token is", p: "A piece of text + a type label." },
+        { h: "Trace tokens by hand", p: "Given a rule, write out the exact tokens it should produce." },
+        { h: "Adapt the starter tokenizer", p: "Add your project's keywords (AND, OR), strings, and operators (>=, <=, !=)." }
+      ]},
+      { s: 17, w: 2, kicker: "WEEK 2 · YOUR PROJECT", title: "Prelim project: your lexer", sub: "Starting from the template, make tokenize() work for your client's rule syntax.", checks: [
+        "tokenize() handles numbers, strings, and spaces",
+        "Branches added for your project's keywords (AND / OR) and operators",
+        "Correctly tokenizes 5 sample rules from your brief"
+      ]},
+      { s: 18, w: 2, kicker: "WEEK 2 · WRAP-UP", title: "Recap — and what's next", checks: [
+        "Learned what a token is (text + a label)",
+        "Followed the tokenizer's 5 simple steps",
+        "Adapted tokenize() to your own project"
+      ], analogy: { title: "NEXT WEEK · PRELIM EXAM + LEXER DEMO", text: "Prelim exam + your lexer is due. Then in Week 4 we add TypeScript ('Labeled Kitchen Jars') and build the AST ('Office Org Chart')." } },
+
+      // ================= WEEK 3: PRELIM CHECKPOINT =================
+      { s: 19, w: 3, type: "title", kicker: "WEEK 3 · PRELIM CHECKPOINT", title: "Prelim exam + lexer project due", sub: "Show your lexer working, and review the fundamentals.", pipe: 1 },
+      { s: 20, w: 3, kicker: "WEEK 3 · ROADMAP", title: "Today's plan", steps: [
+        "Quick review of tokens and JavaScript basics",
+        "Prelim exam (paper + computer)",
+        "Demo your team's lexer live"
+      ], pipe: 1 },
+      { s: 21, w: 3, kicker: "WEEK 3 · PLAIN-ENGLISH TERMS", title: "Words to know — quick review", cards: [
+        { h: "Compiler Front-End", p: "Reads text a person wrote and turns it into tokens and a structured AST tree. (Like: a translator)" },
+        { h: "Lexer", p: "Breaks text into small labeled pieces called tokens. (Like: a coin sorter)" },
+        { h: "Token", p: "A value plus its category label. (Like: a word with a sticky-note on it)" }
+      ]},
+      { s: 22, w: 3, kicker: "WEEK 3 · EXAM", title: "What the Prelim exam covers", cards: [
+        { h: "Part A · Tokens by hand (paper)", p: "Given a string, write out the tokens it should produce." },
+        { h: "Part B · JavaScript basics (paper)", p: "Fix a bug in an if-statement (= vs ===)." },
+        { h: "Part C · Finish a tokenizer (computer)", p: "Complete a tokenize() function that's missing one piece." }
+      ]},
+      { s: 23, w: 3, kicker: "WEEK 3 · YOUR PROJECT", title: "Prelim project due today", sub: "Each team demos their tokenizer live against 5 sample rules from their own client brief.", checks: [
+        "tokenize() runs without crashing",
+        "5 sample rules produce correct tokens",
+        "Half-page note listing your token types"
+      ]},
+      { s: 24, w: 3, kicker: "WEEK 3 · WRAP-UP", title: "Recap — and what's next", checks: [
+        "Reviewed tokens and JavaScript basics",
+        "Took the Prelim exam",
+        "Demoed your working lexer"
+      ], analogy: { title: "NEXT WEEK · TYPESCRIPT + THE AST TREE (MIDTERM FOCUS)", text: "We switch to TypeScript (Labeled Kitchen Jars) and meet the Abstract Syntax Tree (AST) as an Office Org Chart." } },
+
+      // ================= WEEK 4: TYPESCRIPT & THE AST (MIDTERM BOUNDARY) =================
+      { s: 25, w: 4, type: "title", kicker: "WEEK 4 · TYPES & TREES (MIDTERM SCOPE)", title: "TypeScript + meet the tree (AST)", sub: "Add safety with TypeScript 'Labeled Jars', and build the AST 'Office Org Chart'.", pipe: 3 },
+      { s: 26, w: 4, kicker: "WEEK 4 · ROADMAP", title: "Today's plan", steps: [
+        "See why TypeScript catches mistakes early (Labeled Kitchen Jars)",
+        "Add strict types to your tokenizer and AST nodes",
+        "Master the AST — drawing and structuring rules as an Office Org Chart"
+      ], pipe: 2 },
+      { s: 27, w: 4, kicker: "WEEK 4 · PLAIN-ENGLISH TERMS", title: "Words to know", cards: [
+        { h: "Type & Interface (Labeled Jars)", p: "Type: A union label saying what kind of value is allowed (like a jar labeled 'Sugar').\nInterface: A blueprint of the shape a Token or AST node must have." },
+        { h: "AST & Node (Office Org Chart)", p: "AST (Abstract Syntax Tree): The tree showing a rule's hierarchy (like an Office Org Chart).\nNode: One box in the tree (a LogicalExpr Boss node or a Comparison Worker node)." }
+      ], pipe: 2 },
+      { s: 28, w: 4, kicker: "WEEK 4 · TYPESCRIPT", title: "Types are labeled jars in a kitchen", code: `// STRICT TYPED TOKENS & AST NODES\nexport type TokenType = "FIELD" | "NUMBER" | "STRING" | "GT" | "GTE" | "EQ" | "AND" | "OR";\n\nexport interface Token {\n  type: TokenType;\n  value: string | number;\n}`, analogy: { title: "EVERYDAY ANALOGY · Labeled jars in a kitchen", text: "A jar labeled 'Sugar' stops you from pouring in salt — and you catch the mistake before the cake is baked. TypeScript catches a typo like `type: 'NUMBR'` before you even run the program." }, pipe: 2 },
+      { s: 29, w: 4, kicker: "WEEK 4 · BUILDING THE TREE", title: "How a flat token list becomes an AST tree, step by step", sub: "Rule: price > 100 AND category = \"Electronics\"", steps: [
+        "Start with the flat list of tokens: [price] [>] [100] [AND] [category] [=] ['Electronics'] — just a flat row, no hierarchy yet",
+        "Bundle each comparison into a Leaf Worker Node: Comparison(price > 100) and Comparison(category = 'Electronics')",
+        "Put the logical connective (AND) on top as the Boss Node: LogicalExpr(AND) holds left and right comparisons underneath it"
+      ], pipe: 3 },
+      { s: 30, w: 4, kicker: "WEEK 4 · THE AST ORG CHART", title: "The finished Abstract Syntax Tree (AST)", code: `               [ LogicalExpr: AND (The Boss) ]\n                     /                 \\\n     [ Comparison (Left) ]         [ Comparison (Right) ]\n          price > 100              category = "Electronics"`, analogy: { title: "EVERYDAY ANALOGY · An Office Org Chart", text: "AND is the Boss at the top (`LogicalExpr`). The two comparisons are its direct reports (`left` and `right`). When a rule mixes `OR` and `AND` (like `A OR B AND C`), `AND` binds tighter as a Middle Manager, and `OR` sits at the top as the Root Boss!" }, pipe: 3 },
+      { s: 31, w: 4, kicker: "WEEK 4 · GOALS", title: "By the end of our AST Milestone, you can…", cards: [
+        { h: "1. Write TypeScript Interfaces", p: "Define `TokenType`, `Token`, `ComparisonNode`, and recursive `LogicalExprNode` types." },
+        { h: "2. Draw 2-Level & 3-Level ASTs", p: "Sketch any rule (including `AND` before `OR` precedence and parentheses) as an AST Org Chart." },
+        { h: "3. Clear the Midterm AST Arcade!", p: "Test your Lexer, TypeScript, and AST mastery up to Expert Architect difficulty." }
+      ], pipe: 3 },
+      { s: 32, w: 4, type: "title", kicker: "MIDTERM MILESTONE COMPLETE · SLIDE 32 / 32", title: "From Raw Text to AST Org Chart!", sub: "Jump into the 🕹️ Midterm AST Arcade or ⚡ Lexer → AST Playground in the top bar to test your skills.", pipe: 3 }
+    ];
+
+    /********************************************************************
+     * 2. SOUND SYNTHESIZER FOR THE EMBEDDED ARCADE GAME
      ********************************************************************/
     let sfxEnabled = true;
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -554,7 +917,7 @@
         const gain = audioCtx.createGain();
         osc.type = type;
         osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
-        gain.gain.setValueAtTime(0.12, audioCtx.currentTime + delay);
+        gain.gain.setValueAtTime(0.11, audioCtx.currentTime + delay);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + duration);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
@@ -563,116 +926,62 @@
       } catch (e) {}
     }
 
-    function sfxClick() { playTone(520, "triangle", 0.07); }
-    function sfxSuccess() {
-      playTone(523.25, "sine", 0.1, 0);
-      playTone(659.25, "sine", 0.1, 0.08);
-      playTone(783.99, "sine", 0.18, 0.16);
-    }
-    function sfxError() {
-      playTone(180, "sawtooth", 0.18, 0);
-      playTone(140, "sawtooth", 0.22, 0.12);
-    }
-    function sfxFanfare() {
-      [523, 659, 784, 1046].forEach((f, idx) => playTone(f, "triangle", 0.18, idx * 0.1));
-    }
+    function sfxClick() { playTone(520, "triangle", 0.06); }
+    function sfxSuccess() { playTone(523.25, "sine", 0.1, 0); playTone(659.25, "sine", 0.1, 0.08); playTone(783.99, "sine", 0.18, 0.16); }
+    function sfxError() { playTone(180, "sawtooth", 0.18, 0); playTone(140, "sawtooth", 0.22, 0.12); }
+    function sfxFanfare() { [523, 659, 784, 1046].forEach((f, idx) => playTone(f, "triangle", 0.18, idx * 0.1)); }
 
     /********************************************************************
-     * 2. DIFFICULTY TIERS (INTERN -> JUNIOR -> SENIOR -> EXPERT)
-     *    SCOPED STRICTLY UP TO AST ONLY (STAGES 1, 2, AND 3)
+     * 3. ARCADE DIFFICULTY TIERS & 24 QUESTIONS (STRICTLY UP TO AST ONLY)
      ********************************************************************/
     const DIFFICULTIES = {
       intern: {
-        id: "intern",
-        name: "Intern",
-        icon: "🟢",
-        label: "🟢 INTERN (EASY)",
-        timePerQ: 45,
-        lives: 4,
-        multiplier: 1.0,
-        hintCost: 0,
+        id: "intern", name: "Intern", icon: "🟢", label: "🟢 INTERN (EASY)",
+        timePerQ: 45, lives: 4, multiplier: 1.0, hintCost: 0,
         desc: "Fundamentals: Coin Sorter (Lexer), Labeled Kitchen Jars (TypeScript), and 2-level Office Org Charts (AST)."
       },
       junior: {
-        id: "junior",
-        name: "Junior Dev",
-        icon: "🔵",
-        label: "🔵 JUNIOR DEV (MEDIUM)",
-        timePerQ: 35,
-        lives: 3,
-        multiplier: 1.5,
-        hintCost: 25,
+        id: "junior", name: "Junior Dev", icon: "🔵", label: "🔵 JUNIOR DEV (MEDIUM)",
+        timePerQ: 35, lives: 3, multiplier: 1.5, hintCost: 25,
         desc: "Prelim to Week 4 Lab: 7-token rules with strings, tokenize() cursor loops, Token & Comparison interfaces, and OR ASTs."
       },
       senior: {
-        id: "senior",
-        name: "Senior Dev",
-        icon: "🟣",
-        label: "🟣 SENIOR DEV (HARD)",
-        timePerQ: 25,
-        lives: 3,
-        multiplier: 2.0,
-        hintCost: 50,
+        id: "senior", name: "Senior Dev", icon: "🟣", label: "🟣 SENIOR DEV (HARD)",
+        timePerQ: 25, lives: 3, multiplier: 2.0, hintCost: 50,
         desc: "Midterm Standard: Trap tokens, string quote loops, recursive ASTNode unions, and 3-level AND vs OR precedence trees."
       },
       expert: {
-        id: "expert",
-        name: "Expert Architect",
-        icon: "🔥",
-        label: "🔥 EXPERT ARCHITECT",
-        timePerQ: 20,
-        lives: 2,
-        multiplier: 3.0,
-        hintCost: 100,
+        id: "expert", name: "Expert Architect", icon: "🔥", label: "🔥 EXPERT ARCHITECT",
+        timePerQ: 20, lives: 2, multiplier: 3.0, hintCost: 100,
         desc: "Mastery Mode: 13-token parenthesized rules, Maximal Munch bugs, AST discriminated unions, parentheses override & chaining."
       }
     };
 
-    /********************************************************************
-     * 3. CURATED QUESTION BANK (24 QUESTIONS UP TO AST ONLY)
-     *    - Stage 1: The Lexer (Coin Sorter)
-     *    - Stage 2: TypeScript ("Labeled Jars") & Code Debugging
-     *    - Stage 3: The AST ("Office Org Chart" & Hierarchy)
-     *    (MCQ options are dynamically shuffled on every playthrough!)
-     ********************************************************************/
     const QUESTION_BANK = {
-      // ==================== TIER 1: INTERN (EASY — 6 QUESTIONS) ====================
       intern: [
         {
-          stage: 1,
-          type: "lexer-sort",
-          kicker: "STAGE 1 · THE LEXER (COIN SORTER)",
+          stage: 1, type: "lexer-sort", kicker: "STAGE 1 · THE LEXER (COIN SORTER)",
           prompt: "Act as the Lexer (Coin Sorter)! Click the tokens in exact left-to-right order for this Group 1 (Product Filter) rule:",
           rule: 'price > 100',
-          target: [
-            { val: "price", type: "FIELD" },
-            { val: ">", type: "GT" },
-            { val: "100", type: "NUMBER" }
-          ],
-          distractors: [
-            { val: "price > 100", type: "RAW_STRING" }
-          ],
+          target: [{ val: "price", type: "FIELD" }, { val: ">", type: "GT" }, { val: "100", type: "NUMBER" }],
+          distractors: [{ val: "price > 100", type: "RAW_STRING" }],
           hint: "The Lexer skips spaces and sorts the field name (FIELD), the operator (GT), and the digits (NUMBER) into separate labeled tokens."
         },
         {
-          stage: 1,
-          type: "mcq",
-          kicker: "STAGE 1 · COMPILER ANALOGIES (THE LEXER)",
+          stage: 1, type: "mcq", kicker: "STAGE 1 · COMPILER ANALOGIES (THE LEXER)",
           prompt: "Why do we compare Step 1 of our compiler—the Lexer (Tokenizer)—to a mechanical Coin Sorter?",
           code: `Input String:  "price > 100"\nLexer Output:  [ { type: "FIELD", value: "price" }, { type: "GT", value: ">" }, { type: "NUMBER", value: 100 } ]`,
           options: [
             "Because it breaks raw text into a flat list of labeled token buckets without deciding hierarchy yet",
             "Because it builds a 3-level corporate Org Chart showing who reports to whom",
-            "Because it connects React directly to MongoDB Atlas",
+            "Because it connects React directly to a cloud database",
             "Because it calculates the final true or false answer of the rule immediately"
           ],
           correct: 0,
           hint: "A coin sorter drops mixed change into labeled trays (FIELD, GT, NUMBER)—it only produces a flat list of tokens!"
         },
         {
-          stage: 2,
-          type: "mcq",
-          kicker: "STAGE 2 · PRELIM JAVASCRIPT BUG HUNT",
+          stage: 2, type: "mcq", kicker: "STAGE 2 · PRELIM JAVASCRIPT BUG HUNT",
           prompt: "This hardcoded rule always prints 'Matches!' even when category is 'Books'. What is the bug on Line 3?",
           code: `1: let price = 150;\n2: let category = "Books";\n3: if (price > 100 && category = "Electronics") {\n4:   console.log("Matches!");\n5: }`,
           options: [
@@ -685,39 +994,33 @@
           hint: "In JavaScript, a single '=' assigns a value (which evaluates as truthy), whereas '===' compares two values!"
         },
         {
-          stage: 2,
-          type: "mcq",
-          kicker: "STAGE 2 · TYPESCRIPT (LABELED KITCHEN JARS)",
+          stage: 2, type: "mcq", kicker: "STAGE 2 · TYPESCRIPT (LABELED KITCHEN JARS)",
           prompt: "In Week 4, we compare TypeScript types to 'Labeled Kitchen Jars'. What does this TokenType union protect us from?",
           code: `export type TokenType = "FIELD" | "NUMBER" | "STRING" | "GT" | "AND" | "OR";\n\nexport interface Token {\n  type: TokenType;\n  value: string | number;\n}`,
           options: [
             "It catches typos like type: 'NUMBR' in the editor before we even run the program",
-            "It automatically draws the AST Org Chart without needing a parser",
+            "It automatically draws the AST Org Chart without needing any code",
             "It makes the browser skip the Lexer step completely",
-            "It encrypts the rule string inside MongoDB"
+            "It converts all numbers into strings automatically"
           ],
           correct: 0,
           hint: "Just like a kitchen jar labeled 'Sugar' prevents you from pouring in salt, TokenType stops invalid token labels at compile time."
         },
         {
-          stage: 3,
-          type: "mcq",
-          kicker: "STAGE 3 · WHY WE NEED AN AST (OFFICE ORG CHART)",
+          stage: 3, type: "mcq", kicker: "STAGE 3 · WHY WE NEED AN AST (OFFICE ORG CHART)",
           prompt: "Once the Lexer gives us a flat array of tokens, why do we still need to build an Abstract Syntax Tree (AST)?",
           code: `Flat Tokens: [price] [>] [100] [AND] [stock] [>] [0]\nAST Output:  LogicalExpr (AND) -> left: Comparison(price > 100), right: Comparison(stock > 0)`,
           options: [
             "A flat list has no hierarchy; the AST acts like an Office Org Chart showing which operator is the Boss and which comparisons report to it",
             "Because JavaScript arrays cannot hold more than 5 items at a time",
             "Because the Lexer deletes all field names and numbers",
-            "An AST is only used to style CSS buttons in React"
+            "An AST is only used to style CSS buttons"
           ],
           correct: 0,
           hint: "Tokens are just a flat line of words. The AST establishes the reporting hierarchy (Boss node vs. Direct Report nodes)!"
         },
         {
-          stage: 3,
-          type: "ast-builder",
-          kicker: "STAGE 3 · BUILD THE AST ORG CHART",
+          stage: 3, type: "ast-builder", kicker: "STAGE 3 · BUILD THE AST ORG CHART",
           prompt: "Build the AST Org Chart for this Group 1 (Product Filter) rule! Click a slot in the tree, then click the matching node:",
           rule: 'price > 100 AND stock > 0',
           layout: "two-level",
@@ -730,34 +1033,20 @@
           hint: "In our Office Org Chart analogy, the logical operator (AND) is the Boss at the top, and the two comparisons report directly underneath it."
         }
       ],
-
-      // ==================== TIER 2: JUNIOR DEV (MEDIUM — 6 QUESTIONS) ====================
       junior: [
         {
-          stage: 1,
-          type: "lexer-sort",
-          kicker: "STAGE 1 · 7-TOKEN PRELIM LEXER",
+          stage: 1, type: "lexer-sort", kicker: "STAGE 1 · 7-TOKEN PRELIM LEXER",
           prompt: "Tokenize this Prelim Exam rule in exact left-to-right order (watch out for two-character operators and string quotes!):",
           rule: 'price >= 250 AND category = "Electronics"',
           target: [
-            { val: "price", type: "FIELD" },
-            { val: ">=", type: "GTE" },
-            { val: "250", type: "NUMBER" },
-            { val: "AND", type: "AND" },
-            { val: "category", type: "FIELD" },
-            { val: "=", type: "EQ" },
-            { val: "Electronics", type: "STRING" }
+            { val: "price", type: "FIELD" }, { val: ">=", type: "GTE" }, { val: "250", type: "NUMBER" },
+            { val: "AND", type: "AND" }, { val: "category", type: "FIELD" }, { val: "=", type: "EQ" }, { val: "Electronics", type: "STRING" }
           ],
-          distractors: [
-            { val: ">", type: "GT" },
-            { val: "Electronics", type: "FIELD" }
-          ],
+          distractors: [{ val: ">", type: "GT" }, { val: "Electronics", type: "FIELD" }],
           hint: ">= is a single GTE token, AND is a logical keyword, and quoted \"Electronics\" is labeled as a STRING token (not a FIELD)."
         },
         {
-          stage: 1,
-          type: "mcq",
-          kicker: "STAGE 1 · TOKENIZER CURSOR LOGIC",
+          stage: 1, type: "mcq", kicker: "STAGE 1 · TOKENIZER CURSOR LOGIC",
           prompt: "In Prelim Part C, you complete the `if (char === '>')` branch inside `tokenize(input)`. Which code block is complete and safe?",
           code: `while (i < input.length) {\n  const char = input[i];\n  // Complete the '>' branch here:\n}`,
           options: [
@@ -770,10 +1059,8 @@
           hint: "After pushing the GT token, you MUST increment `i++` before `continue` so the loop moves to the next character!"
         },
         {
-          stage: 2,
-          type: "mcq",
-          kicker: "STAGE 2 · TYPESCRIPT UNION INTERFACES",
-          prompt: "In Week 4 TS Lab Task 1, a Token's `value` needs to hold either a field/string (like `'Electronics'`) OR a number (like `250`). Which interface is valid TypeScript?",
+          stage: 2, type: "mcq", kicker: "STAGE 2 · TYPESCRIPT UNION INTERFACES",
+          prompt: "In Week 4 TS Lab Task 1, a Token's `value` needs to hold either a string (like `'Electronics'`) OR a number (like `250`). Which interface is valid TypeScript?",
           code: `export type TokenType = "FIELD" | "NUMBER" | "STRING" | "GT" | "GTE" | "EQ" | "AND" | "OR";`,
           options: [
             "export interface Token {\n  type: TokenType;\n  value: string | number;\n}",
@@ -785,9 +1072,7 @@
           hint: "In TypeScript, the pipe symbol (`string | number`) is a union type meaning the property can hold a string OR a number."
         },
         {
-          stage: 2,
-          type: "mcq",
-          kicker: "STAGE 2 · TYPING LEAF COMPARISON NODES",
+          stage: 2, type: "mcq", kicker: "STAGE 2 · TYPING LEAF COMPARISON NODES",
           prompt: "In your AST (`ast.ts`), every bottom-level comparison like `income >= 35000` is stored in a `Comparison` node. Which TypeScript interface matches its exact structure?",
           code: `// Example AST Leaf Node:\n// { type: "Comparison", field: "income", operator: ">=", value: 35000 }`,
           options: [
@@ -800,9 +1085,7 @@
           hint: "A leaf Comparison node doesn't have `left` or `right` children—it holds `field`, `operator`, and `value`."
         },
         {
-          stage: 3,
-          type: "ast-builder",
-          kicker: "STAGE 3 · GROUP 2 (LOAN ELIGIBILITY) AST ORG CHART",
+          stage: 3, type: "ast-builder", kicker: "STAGE 3 · GROUP 2 (LOAN ELIGIBILITY) AST ORG CHART",
           prompt: "Construct the AST Org Chart for this Group 2 (Eligibility Checker) rule:",
           rule: 'income >= 35000 OR creditScore >= 700',
           layout: "two-level",
@@ -815,9 +1098,7 @@
           hint: "The logical connective joining the two comparisons is OR, so OR sits at the top of the Org Chart as the Boss."
         },
         {
-          stage: 3,
-          type: "mcq",
-          kicker: "STAGE 3 · READING AST JSON OUTPUT",
+          stage: 3, type: "mcq", kicker: "STAGE 3 · READING AST JSON OUTPUT",
           prompt: "For Group 3's Invoice rule `amount <= 5000 AND status = \"Approved\"`, what does the Root (Top Boss) JSON object look like in the AST?",
           code: `Rule: amount <= 5000 AND status = "Approved"`,
           options: [
@@ -830,35 +1111,20 @@
           hint: "The root of a combined rule is a `LogicalExpr` node with `operator: 'AND'`, and its `left` and `right` properties hold the two `Comparison` objects."
         }
       ],
-
-      // ==================== TIER 3: SENIOR DEV (HARD / MIDTERM — 6 QUESTIONS) ====================
       senior: [
         {
-          stage: 1,
-          type: "lexer-sort",
-          kicker: "STAGE 1 · GROUP 3 INVOICE ROUTER LEXER",
+          stage: 1, type: "lexer-sort", kicker: "STAGE 1 · GROUP 3 INVOICE ROUTER LEXER",
           prompt: "Tokenize this Group 3 (Invoice Approval) rule. Watch out for trap tokens with wrong labels in the pool!",
           rule: 'amount >= 10000 OR vendor != "Internal"',
           target: [
-            { val: "amount", type: "FIELD" },
-            { val: ">=", type: "GTE" },
-            { val: "10000", type: "NUMBER" },
-            { val: "OR", type: "OR" },
-            { val: "vendor", type: "FIELD" },
-            { val: "!=", type: "NEQ" },
-            { val: "Internal", type: "STRING" }
+            { val: "amount", type: "FIELD" }, { val: ">=", type: "GTE" }, { val: "10000", type: "NUMBER" },
+            { val: "OR", type: "OR" }, { val: "vendor", type: "FIELD" }, { val: "!=", type: "NEQ" }, { val: "Internal", type: "STRING" }
           ],
-          distractors: [
-            { val: "OR", type: "FIELD" },
-            { val: "Internal", type: "FIELD" },
-            { val: "!", type: "NOT" }
-          ],
+          distractors: [{ val: "OR", type: "FIELD" }, { val: "Internal", type: "FIELD" }, { val: "!", type: "NOT" }],
           hint: "Check the token types carefully: 'OR' has type OR (not FIELD), '!=' is a single NEQ token, and quoted \"Internal\" is a STRING token."
         },
         {
-          stage: 1,
-          type: "mcq",
-          kicker: "STAGE 1 · STRING LITERAL TOKENIZATION LOOP",
+          stage: 1, type: "mcq", kicker: "STAGE 1 · STRING LITERAL TOKENIZATION LOOP",
           prompt: "Look at the string-handling block inside `tokenize(input)`. Why is there a second `i++` AFTER the `while` loop finishes?",
           code: `if (ch === '"' || ch === "'") {\n  const quote = ch;\n  let str = "";\n  i++; // 1st i++ (skips opening quote)\n  while (i < input.length && input[i] !== quote) {\n    str += input[i++];\n  }\n  i++; // <-- Why is this 2nd i++ required?\n  tokens.push({ type: "STRING", value: str });\n  continue;\n}`,
           options: [
@@ -871,9 +1137,7 @@
           hint: "The inner while-loop stops when `input[i]` is sitting right on the closing `\"`. Without the second `i++`, the next iteration would see that closing `\"` as a new opening quote!"
         },
         {
-          stage: 2,
-          type: "mcq",
-          kicker: "STAGE 2 · RECURSIVE AST NODE TYPES",
+          stage: 2, type: "mcq", kicker: "STAGE 2 · RECURSIVE AST NODE TYPES",
           prompt: "In `LogicalExpr`, why must `left` and `right` be typed as `ASTNode` instead of `ComparisonNode`?",
           code: `export type ASTNode = LogicalExprNode | ComparisonNode;\n\nexport interface LogicalExprNode {\n  type: "LogicalExpr";\n  operator: "AND" | "OR";\n  left: ASTNode;  // Why ASTNode instead of ComparisonNode?\n  right: ASTNode;\n}`,
           options: [
@@ -886,9 +1150,7 @@
           hint: "Think of the Office Org Chart: a CEO (`OR`) doesn't just manage individual workers (`ComparisonNode`)—they can also manage a Regional Manager (`LogicalExprNode`)!"
         },
         {
-          stage: 2,
-          type: "mcq",
-          kicker: "STAGE 2 · TYPESCRIPT COMPILE-TIME AST CHECK",
+          stage: 2, type: "mcq", kicker: "STAGE 2 · TYPESCRIPT COMPILE-TIME AST CHECK",
           prompt: "Given our strict TypeScript AST definitions from Week 4, why will TypeScript refuse to compile this AST object?",
           code: `const badTree: ASTNode = {\n  type: "LogicalExpr",\n  operator: "THEN",\n  left: { type: "Comparison", field: "price", operator: ">", value: 100 },\n  right: { type: "Comparison", field: "stock", operator: ">", value: 0 }\n};`,
           options: [
@@ -901,14 +1163,12 @@
           hint: "Remember the Labeled Kitchen Jars analogy: `operator: 'AND' | 'OR'` only permits `'AND'` or `'OR'`, catching `'THEN'` immediately!"
         },
         {
-          stage: 3,
-          type: "ast-builder",
-          kicker: "STAGE 3 · OPERATOR PRECEDENCE AST (AND vs OR)",
+          stage: 3, type: "ast-builder", kicker: "STAGE 3 · OPERATOR PRECEDENCE AST (AND vs OR)",
           prompt: "CRITICAL MIDTERM CONCEPT: `AND` binds tighter (higher precedence) than `OR`! Build the 3-level AST Org Chart for this rule:",
           rule: 'vip = "Gold" OR price > 100 AND stock > 0',
           layout: "three-level-right",
           slots: [
-            { role: "TOP BOSS (Evaluated Last / Lowest Precedence)", answer: "OR" },
+            { role: "TOP BOSS (Lowest Precedence)", answer: "OR" },
             { role: "LEFT DIRECT REPORT", answer: 'vip = "Gold"' },
             { role: "RIGHT MIDDLE MANAGER (Binds Tighter)", answer: "AND" },
             { role: "AND's LEFT WORKER", answer: "price > 100" },
@@ -918,14 +1178,12 @@
           hint: "Because AND has higher precedence (like multiplication before addition), `price > 100 AND stock > 0` groups together first under an AND Middle Manager, leaving OR as the Top Boss!"
         },
         {
-          stage: 3,
-          type: "mcq",
-          kicker: "STAGE 3 · WHY HIGHER PRECEDENCE SITS LOWER IN THE AST",
+          stage: 3, type: "mcq", kicker: "STAGE 3 · WHY HIGHER PRECEDENCE SITS LOWER IN THE AST",
           prompt: "Students often ask: 'If `AND` has higher priority than `OR`, why is `OR` at the very top (Root) of the AST for `A OR B AND C`?'",
           code: `       [ OR ]          <-- Top Boss (Root)\n       /    \\\n     [A]   [ AND ]     <-- Middle Manager (Grouped First!)\n            /   \\\n          [B]   [C]`,
           options: [
             "Higher precedence means `B AND C` binds together first into a tight subtree at the bottom, leaving `OR` as the final outer connector at the top",
-            "Because the parser reads tokens right-to-left instead of left-to-right",
+            "Because the tokenizer reads tokens right-to-left instead of left-to-right",
             "Because `OR` is alphabetically after `AND`",
             "Because `AND` nodes are not allowed to be the Root of any AST"
           ],
@@ -933,42 +1191,25 @@
           hint: "In an AST, deeper nodes are grouped most tightly! `B AND C` is bundled first as a unit, and `OR` connects `A` to that unit at the top."
         }
       ],
-
-      // ==================== TIER 4: EXPERT ARCHITECT (INSANE — 6 QUESTIONS) ====================
       expert: [
         {
-          stage: 1,
-          type: "lexer-sort",
-          kicker: "STAGE 1 · EXPERT LEXER: PARENTHESES, FLOATS & TRAPS",
+          stage: 1, type: "lexer-sort", kicker: "STAGE 1 · EXPERT LEXER: PARENTHESES, FLOATS & TRAPS",
           prompt: "EXPERT CHALLENGE: Tokenize this 13-token grouped rule in exact order. Beware of subtle trap tokens in the pool!",
           rule: '(amount >= 5000.50 OR urgent = "true") AND dept != "HR"',
           target: [
-            { val: "(", type: "LPAREN" },
-            { val: "amount", type: "FIELD" },
-            { val: ">=", type: "GTE" },
-            { val: "5000.50", type: "NUMBER" },
-            { val: "OR", type: "OR" },
-            { val: "urgent", type: "FIELD" },
-            { val: "=", type: "EQ" },
-            { val: "true", type: "STRING" },
-            { val: ")", type: "RPAREN" },
-            { val: "AND", type: "AND" },
-            { val: "dept", type: "FIELD" },
-            { val: "!=", type: "NEQ" },
-            { val: "HR", type: "STRING" }
+            { val: "(", type: "LPAREN" }, { val: "amount", type: "FIELD" }, { val: ">=", type: "GTE" },
+            { val: "5000.50", type: "NUMBER" }, { val: "OR", type: "OR" }, { val: "urgent", type: "FIELD" },
+            { val: "=", type: "EQ" }, { val: "true", type: "STRING" }, { val: ")", type: "RPAREN" },
+            { val: "AND", type: "AND" }, { val: "dept", type: "FIELD" }, { val: "!=", type: "NEQ" }, { val: "HR", type: "STRING" }
           ],
           distractors: [
-            { val: "5000", type: "NUMBER" },
-            { val: ".50", type: "NUMBER" },
-            { val: "true", type: "BOOLEAN" },
-            { val: "HR", type: "FIELD" }
+            { val: "5000", type: "NUMBER" }, { val: ".50", type: "NUMBER" },
+            { val: "true", type: "BOOLEAN" }, { val: "HR", type: "FIELD" }
           ],
           hint: "Parentheses are LPAREN/RPAREN, `5000.50` is a single NUMBER token, and `\"true\"` inside quotes is a STRING token!"
         },
         {
-          stage: 1,
-          type: "mcq",
-          kicker: "STAGE 1 · EXPERT LEXER BUG: MAXIMAL MUNCH ORDERING",
+          stage: 1, type: "mcq", kicker: "STAGE 1 · EXPERT LEXER BUG: MAXIMAL MUNCH ORDERING",
           prompt: "When given `price >= 100`, this buggy tokenizer outputs `[FIELD('price'), GT('>'), EQ('='), NUMBER(100)]` instead of `[FIELD, GTE, NUMBER]`. Why?",
           code: `if (['>', '<', '='].includes(input[i])) {\n  tokens.push({ type: 'OPERATOR', value: input[i] });\n  i++; continue;\n}\nconst two = input.slice(i, i + 2);\nif (['>=', '<=', '==', '!='].includes(two)) {\n  tokens.push({ type: 'OPERATOR', value: two });\n  i += 2; continue;\n}`,
           options: [
@@ -981,9 +1222,7 @@
           hint: "Always check multi-character operators (`>=`, `<=`, `==`, `!=`) BEFORE single-character operators (`>`, `<`, `=`)!"
         },
         {
-          stage: 2,
-          type: "mcq",
-          kicker: "STAGE 2 · EXPERT TYPESCRIPT DISCRIMINATED UNIONS",
+          stage: 2, type: "mcq", kicker: "STAGE 2 · EXPERT TYPESCRIPT DISCRIMINATED UNIONS",
           prompt: "Why do we include a literal `type: 'LogicalExpr'` and `type: 'Comparison'` field on each interface in our `ASTNode` union?",
           code: `export type ASTNode =\n  | { type: "LogicalExpr"; operator: "AND" | "OR"; left: ASTNode; right: ASTNode }\n  | { type: "Comparison"; field: string; operator: string; value: string | number };`,
           options: [
@@ -996,10 +1235,8 @@
           hint: "In TypeScript, a shared literal property (`type`) acts as a 'tag' (discriminant) so TypeScript knows which properties (`left/right` vs `field/value`) exist in each `if` branch."
         },
         {
-          stage: 2,
-          type: "mcq",
-          kicker: "STAGE 2 · EXPERT PARSER-TO-AST PRECEDENCE ARCHITECTURE",
-          prompt: "Look at `parseTokens(tokens)` from our playground. How does the call hierarchy between `parseOr()`, `parseAnd()`, and `parseComparison()` enforce that `AND` binds tighter than `OR`?",
+          stage: 2, type: "mcq", kicker: "STAGE 2 · EXPERT AST BUILDER PRECEDENCE ARCHITECTURE",
+          prompt: "Look at `buildAST(tokens)` from our playground. How does the call hierarchy between `parseOr()`, `parseAnd()`, and `parseComparison()` enforce that `AND` binds tighter than `OR`?",
           code: `function parseAnd(): ASTNode {\n  let left = parseComparison();\n  while (pos < tokens.length && tokens[pos].type === 'AND') {\n    pos++;\n    left = { type: 'LogicalExpr', operator: 'AND', left, right: parseComparison() };\n  }\n  return left;\n}\nfunction parseOr(): ASTNode {\n  let left = parseAnd();\n  while (pos < tokens.length && tokens[pos].type === 'OR') {\n    pos++;\n    left = { type: 'LogicalExpr', operator: 'OR', left, right: parseAnd() };\n  }\n  return left;\n}`,
           options: [
             "`parseOr()` calls `parseAnd()` first, which eagerly bundles adjacent `AND` comparisons into a subtree before `parseOr()` wraps them in an outer `OR` node",
@@ -1011,9 +1248,7 @@
           hint: "Because `parseOr()` delegates to `parseAnd()` to get its `left` and `right` operands, any `AND` chains are completely assembled into subtrees before `OR` links them together!"
         },
         {
-          stage: 3,
-          type: "ast-builder",
-          kicker: "STAGE 3 · EXPERT AST: PARENTHESES OVERRIDING PRECEDENCE",
+          stage: 3, type: "ast-builder", kicker: "STAGE 3 · EXPERT AST: PARENTHESES OVERRIDING PRECEDENCE",
           prompt: "EXPERT PRECEDENCE OVERRIDE: Normally `AND` binds tighter than `OR`, but parentheses override precedence! Build the 3-level AST Org Chart:",
           rule: '(vip = "Gold" OR price > 100) AND stock > 0',
           layout: "three-level-left",
@@ -1028,9 +1263,7 @@
           hint: "Parentheses force `(vip = 'Gold' OR price > 100)` to become a subtree first (Left Middle Manager = OR), making `AND` the Top Boss of the whole tree!"
         },
         {
-          stage: 3,
-          type: "ast-builder",
-          kicker: "STAGE 3 · EXPERT AST: LEFT-ASSOCIATIVE CHAINING",
+          stage: 3, type: "ast-builder", kicker: "STAGE 3 · EXPERT AST: LEFT-ASSOCIATIVE CHAINING",
           prompt: "FINAL BOSS: Trace how `while (tokens[pos].type === 'AND')` builds a left-associative AST when chaining THREE `AND` conditions:",
           rule: 'price > 100 AND stock > 0 AND rating >= 4',
           layout: "three-level-left",
@@ -1048,9 +1281,14 @@
     };
 
     /********************************************************************
-     * 4. GAME STATE (WITH DYNAMIC MCQ OPTION SHUFFLING)
+     * 4. GLOBAL STATE & ROUTER
      ********************************************************************/
-    let state = {
+    let currentSlideIndex = 0;
+    let answerKeyUnlocked = false;
+    let selectedExamFilter = "all";
+
+    let arcade = {
+      screen: "menu", // "menu" | "play" | "end"
       playerName: "",
       clientBrief: "Group 1 — Brief 1: E-Commerce Product Filter",
       difficulty: "senior",
@@ -1064,165 +1302,185 @@
       timeLeft: 25,
       timerId: null,
       locked: false,
-      hintUsedOnCurrent: false,
-      // Stage 1 Lexer interactive state
+      hintUsed: false,
       selectedTokens: [],
       availableTokens: [],
-      // Stage 2/3 MCQ shuffled options state
       shuffledOptions: [],
       shuffledCorrectIndex: 0,
-      // Stage 3 AST interactive state
       astValues: {},
       activeAstSlot: 0
     };
 
-    const appStage = document.getElementById("app-stage");
-    const hudStats = document.getElementById("hud-stats");
+    function handleRoute() {
+      clearInterval(arcade.timerId);
+      const hash = window.location.hash.replace("#/", "") || "slides";
+      document.querySelectorAll(".nav-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.route === hash);
+      });
 
-    document.getElementById("sound-toggle").onclick = (e) => {
-      sfxEnabled = !sfxEnabled;
-      e.target.textContent = sfxEnabled ? "🔊 SFX" : "🔇 Muted";
-    };
+      const viewport = document.getElementById("app-viewport");
+      if (hash === "slides") renderSlidesView(viewport);
+      else if (hash === "arcade") renderArcadeView(viewport);
+      else if (hash === "playground") renderPlaygroundView(viewport);
+      else if (hash === "briefs") renderBriefsView(viewport);
+      else if (hash === "quizzes") renderQuizzesView(viewport);
+      else if (hash === "guides") renderGuidesView(viewport);
+      else if (hash === "keys") renderKeysView(viewport);
+      else renderSlidesView(viewport);
+    }
 
-    document.getElementById("quit-btn").onclick = () => {
-      clearInterval(state.timerId);
-      renderStartScreen();
-    };
+    window.addEventListener("hashchange", handleRoute);
 
     /********************************************************************
-     * 5. START SCREEN (WITH 4 DIFFICULTIES & ACTIVE CLIENT BRIEFS)
+     * 5. VIEW 1: SLIDE DECK (STRICTLY WEEKS 1–4 / UP TO AST ONLY)
      ********************************************************************/
-    function renderStartScreen() {
-      hudStats.style.display = "none";
+    function renderSlidesView(container) {
+      const slide = SLIDES[currentSlideIndex];
+      let bodyHTML = "";
 
-      appStage.innerHTML = `
-        <div class="card-panel">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
-            <div>
-              <span class="kicker-tag">MIDTERM SCOPE · STEP 1 (LEXER) TO STEP 3 (AST) ONLY</span>
-              <h1 style="font-size:2.3rem; font-weight:900; margin-top:10px; letter-spacing:-0.03em;">
-                🕹️ Compiler Arcade: Lexer to AST Quest
-              </h1>
-              <p style="color:var(--text-muted); font-size:1.02rem; margin-top:6px;">
-                Master the <b>Lexer (Coin Sorter)</b>, <b>TypeScript ("Labeled Kitchen Jars")</b>, and <b>AST ("Office Org Chart")</b> across 4 difficulty tiers up to <b>Expert Architect</b>.
-              </p>
+      if (slide.cards) {
+        const colClass = slide.cards.length === 3 ? "grid-3" : "grid-2";
+        bodyHTML += `<div class="${colClass}">
+          ${slide.cards.map(c => `
+            <div class="info-card">
+              <h4>${c.h}</h4>
+              <p>${c.p.replace(/\n/g, "<br><br>")}</p>
             </div>
-          </div>
+          `).join("")}
+        </div>`;
+      }
 
-          <div class="form-row" style="margin-top:24px;">
-            <div class="input-group">
-              <label>👤 Student / Team Name</label>
-              <input type="text" id="player-name" class="input-ctrl" placeholder="e.g., Juan Dela Cruz (Group 1)" value="${escapeHTML(state.playerName)}" />
+      if (slide.steps) {
+        bodyHTML += `<div class="step-list">
+          ${slide.steps.map((st, idx) => `
+            <div class="step-item">
+              <div class="step-num">${idx + 1}</div>
+              <div style="font-size:1.02rem; font-weight:500;">${st}</div>
             </div>
-            <div class="input-group">
-              <label>📋 Assigned Class Group & Client Brief</label>
-              <select id="player-brief" class="input-ctrl">
-                <option value="Group 1 — Brief 1: E-Commerce Product Filter">🛒 Group 1 — Brief 1: E-Commerce Product Filter</option>
-                <option value="Group 2 — Brief 2: Loan & Scholarship Eligibility Checker">🏦 Group 2 — Brief 2: Loan & Scholarship Eligibility Checker</option>
-                <option value="Group 3 — Brief 4: Invoice & Template Approval Generator">🧾 Group 3 — Brief 4: Invoice & Template Approval Generator</option>
-                <option value="Brief 3: Dynamic Pricing & Formula Evaluator">🧮 Brief 3: Dynamic Pricing & Formula Evaluator</option>
-              </select>
+          `).join("")}
+        </div>`;
+      }
+
+      if (slide.checks) {
+        bodyHTML += `<div class="step-list">
+          ${slide.checks.map(ch => `
+            <div class="step-item">
+              <div class="step-num check">✓</div>
+              <div style="font-size:1.02rem; font-weight:500;">${ch}</div>
             </div>
-          </div>
+          `).join("")}
+        </div>`;
+      }
 
-          <div class="input-group">
-            <label>⚡ Select Difficulty Tier (6 Challenges per Tier · Up to AST Only)</label>
+      if (slide.code && slide.analogy) {
+        bodyHTML += `<div class="grid-2">
+          <div class="code-block">${escapeHTML(slide.code)}</div>
+          <div class="analogy-box">
+            <div class="analogy-label">${slide.analogy.title}</div>
+            <p style="font-size:1rem; line-height:1.55; color:#f1f5f9;">${slide.analogy.text}</p>
           </div>
+        </div>`;
+      } else {
+        if (slide.code) bodyHTML += `<div class="code-block">${escapeHTML(slide.code)}</div>`;
+        if (slide.analogy) {
+          bodyHTML += `<div class="analogy-box">
+            <div class="analogy-label">${slide.analogy.title}</div>
+            <p style="font-size:1.02rem; line-height:1.55; color:#f1f5f9;">${slide.analogy.text}</p>
+          </div>`;
+        }
+      }
 
-          <div class="diff-grid">
-            ${Object.values(DIFFICULTIES).map(d => `
-              <div class="diff-card ${d.id} ${state.difficulty === d.id ? 'selected' : ''}" data-diff="${d.id}">
-                <div>
-                  <span class="diff-badge" style="background:rgba(255,255,255,0.08);">${d.icon}${d.multiplier}x XP</span>
-                  <h3>${d.name}</h3>
-                  <p>${d.desc}</p>
+      const pipeHTML = slide.pipe ? `
+        <div class="pipeline-bar">
+          <div class="pipe-step ${slide.pipe === 1 ? 'active' : 'done'}"><span>1. Lexer (🪙 Coin Sorter)</span><span>${slide.pipe === 1 ? '◀ WE ARE HERE' : '✓ DONE'}</span></div>
+          <div class="pipe-step ${slide.pipe === 2 ? 'active' : (slide.pipe > 2 ? 'done' : '')}"><span>2. TypeScript (🫙 Labeled Jars)</span><span>${slide.pipe === 2 ? '◀ WE ARE HERE' : (slide.pipe > 2 ? '✓ DONE' : 'UP NEXT')}</span></div>
+          <div class="pipe-step ${slide.pipe === 3 ? 'active' : ''}"><span>3. AST (🏢 Office Org Chart)</span><span>${slide.pipe === 3 ? '◀ WE ARE HERE' : 'MIDTERM GOAL'}</span></div>
+        </div>
+      ` : "";
+
+      const weekStarts = { 1: 0, 2: 9, 3: 18, 4: 24 };
+      const weekTitles = {
+        1: "Week 1: Kickoff & JS Basics",
+        2: "Week 2: Step 1 — The Lexer (Coin Sorter)",
+        3: "Week 3: Prelim Checkpoint",
+        4: "Week 4: TypeScript & The AST (Org Chart)"
+      };
+
+      container.innerHTML = `
+        <div class="presentation-wrapper">
+          <div class="slide-stage">
+            <div class="slide-card ${slide.type === 'title' ? 'title-slide' : ''}">
+              <div>
+                <div class="slide-top-meta">
+                  <span class="slide-kicker">${slide.kicker}</span>
+                  <span class="slide-counter-badge">WEEK ${slide.w} · SLIDE ${String(slide.s).padStart(2, '0')} / ${SLIDES.length} (UP TO AST)</span>
                 </div>
-                <div class="diff-meta">
-                  ⏱️ ${d.timePerQ}s / Q &nbsp;·&nbsp; ❤️ ${d.lives} Lives<br>
-                  💡 Hint: ${d.hintCost === 0 ? 'Free' : '-' + d.hintCost + ' XP'}
-                </div>
+                <h1 class="slide-headline">${slide.title}</h1>
+                ${slide.sub ? `<p class="slide-sub">${slide.sub}</p>` : ''}
               </div>
-            `).join("")}
+              <div class="slide-body">${bodyHTML}</div>
+              ${pipeHTML}
+            </div>
           </div>
 
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; margin-top:10px;">
-            <div style="font-size:0.86rem; color:var(--text-muted);">
-              🏆 Completing a run generates a verifiable <b>Midterm AST Completion Certificate</b> you can screenshot or print to PDF.
+          <div class="slide-controls">
+            <div class="ctrl-group">
+              <select class="week-select" id="week-jumper">
+                ${Object.keys(weekStarts).map(w => `
+                  <option value="${weekStarts[w]}" ${slide.w == w ? 'selected' : ''}>${weekTitles[w]}</option>
+                `).join("")}
+              </select>
+              <span style="font-size:0.8rem; color:var(--text-muted);">Use <b>←</b> <b>→</b> keys or <b>F</b> for Fullscreen</span>
             </div>
-            <button class="btn ${state.difficulty === 'expert' ? 'btn-expert' : 'btn-primary'}" id="start-game-btn" style="font-size:1.05rem; padding:14px 28px;">
-              🚀 Launch ${DIFFICULTIES[state.difficulty].name} Quest ▶
-            </button>
+
+            <div class="ctrl-group">
+              <button class="btn" id="prev-slide" ${currentSlideIndex === 0 ? 'disabled' : ''}>◀ Prev</button>
+              <span style="font-family:'JetBrains Mono'; font-size:0.88rem; min-width:75px; text-align:center;">
+                ${currentSlideIndex + 1} / ${SLIDES.length}
+              </span>
+              <button class="btn btn-primary" id="next-slide" ${currentSlideIndex === SLIDES.length - 1 ? 'disabled' : ''}>Next ▶</button>
+              <button class="btn" id="fullscreen-btn">⛶ Fullscreen</button>
+            </div>
           </div>
         </div>
       `;
 
-      document.getElementById("player-brief").value = state.clientBrief;
-
-      document.querySelectorAll(".diff-card").forEach(card => {
-        card.onclick = () => {
-          sfxClick();
-          state.playerName = document.getElementById("player-name").value;
-          state.clientBrief = document.getElementById("player-brief").value;
-          state.difficulty = card.dataset.diff;
-          renderStartScreen();
-        };
-      });
-
-      document.getElementById("start-game-btn").onclick = () => {
-        const nameInput = document.getElementById("player-name").value.trim();
-        state.playerName = nameInput || "Compiler Student";
-        state.clientBrief = document.getElementById("player-brief").value;
-        startGame(state.difficulty);
+      document.getElementById("prev-slide").onclick = () => changeSlide(-1);
+      document.getElementById("next-slide").onclick = () => changeSlide(1);
+      document.getElementById("week-jumper").onchange = (e) => {
+        currentSlideIndex = Number(e.target.value);
+        renderSlidesView(container);
       };
+      document.getElementById("fullscreen-btn").onclick = toggleFullScreen;
     }
+
+    function changeSlide(delta) {
+      const next = currentSlideIndex + delta;
+      if (next >= 0 && next < SLIDES.length) {
+        currentSlideIndex = next;
+        if ((window.location.hash.replace("#/", "") || "slides") === "slides") {
+          renderSlidesView(document.getElementById("app-viewport"));
+        }
+      }
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+      else document.exitFullscreen();
+    }
+
+    window.addEventListener("keydown", (e) => {
+      const activeRoute = window.location.hash.replace("#/", "") || "slides";
+      if (activeRoute !== "slides") return;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)) return;
+      if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); changeSlide(1); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); changeSlide(-1); }
+      else if (e.key.toLowerCase() === "f") { e.preventDefault(); toggleFullScreen(); }
+    });
 
     /********************************************************************
-     * 6. LAUNCH & MANAGE GAME LOOP
+     * 6. VIEW 2: EMBEDDED MIDTERM AST ARCADE (INTERN -> EXPERT)
      ********************************************************************/
-    function startGame(diffKey) {
-      sfxClick();
-      const diff = DIFFICULTIES[diffKey];
-      state.questions = JSON.parse(JSON.stringify(QUESTION_BANK[diffKey]));
-      state.qIndex = 0;
-      state.xp = 0;
-      state.streak = 0;
-      state.maxStreak = 0;
-      state.correctCount = 0;
-      state.lives = diff.lives;
-      state.locked = false;
-
-      hudStats.style.display = "flex";
-      document.getElementById("hud-diff-badge").textContent = diff.label;
-      loadQuestion();
-    }
-
-    function updateHUD() {
-      const diff = DIFFICULTIES[state.difficulty];
-      document.getElementById("hud-xp").textContent = state.xp;
-      document.getElementById("hud-streak").textContent = state.streak;
-      document.getElementById("hud-lives").textContent = "❤️".repeat(Math.max(0, state.lives)) + "🖤".repeat(Math.max(0, diff.lives - state.lives));
-      const timerEl = document.getElementById("hud-timer");
-      timerEl.textContent = `⏱️ ${state.timeLeft}s`;
-      timerEl.classList.toggle("danger", state.timeLeft <= 6);
-    }
-
-    function startTimer() {
-      clearInterval(state.timerId);
-      const diff = DIFFICULTIES[state.difficulty];
-      state.timeLeft = diff.timePerQ;
-      updateHUD();
-
-      state.timerId = setInterval(() => {
-        if (state.locked) return;
-        state.timeLeft--;
-        updateHUD();
-        if (state.timeLeft <= 0) {
-          clearInterval(state.timerId);
-          handleAnswer(false, "⏱️ Time's up! The compiler timed out on this stage.");
-        }
-      }, 1000);
-    }
-
     function shuffle(arr) {
       const copy = [...arr];
       for (let i = copy.length - 1; i > 0; i--) {
@@ -1232,476 +1490,976 @@
       return copy;
     }
 
-    function loadQuestion() {
-      if (state.qIndex >= state.questions.length || state.lives <= 0) {
-        renderEndScreen();
+    function renderArcadeView(container) {
+      if (arcade.screen === "menu") renderArcadeMenu(container);
+      else if (arcade.screen === "play") renderArcadeQuestion(container);
+      else renderArcadeEnd(container);
+    }
+
+    function renderArcadeMenu(container) {
+      clearInterval(arcade.timerId);
+      container.innerHTML = `
+        <div class="page-container">
+          <div class="info-card" style="padding:32px;">
+            <span class="badge">MIDTERM CLASS ACTIVITY · UP TO AST ONLY (WEEKS 1–4)</span>
+            <h1 style="font-size:2.2rem; font-weight:900; margin-top:10px;">🕹️ Compiler Arcade: Lexer to AST Quest</h1>
+            <p style="color:var(--text-muted); margin-top:6px; font-size:1rem;">
+              Test your mastery of <b>Stage 1: The Lexer (Coin Sorter)</b>, <b>Stage 2: TypeScript ("Labeled Kitchen Jars")</b>, and <b>Stage 3: The AST ("Office Org Chart")</b> across 4 difficulty tiers up to <b>Expert Architect</b>.
+            </p>
+
+            <div class="grid-2" style="margin-top:22px;">
+              <div>
+                <label style="font-size:0.8rem; font-weight:800; color:var(--accent); text-transform:uppercase;">👤 Student / Team Name</label>
+                <input type="text" id="arc-name" class="input-field" placeholder="e.g., Juan Dela Cruz (Group 1)" value="${escapeHTML(arcade.playerName)}" />
+              </div>
+              <div>
+                <label style="font-size:0.8rem; font-weight:800; color:var(--accent); text-transform:uppercase;">📋 Assigned Class Group & Brief</label>
+                <select id="arc-brief" class="input-field">
+                  <option value="Group 1 — Brief 1: E-Commerce Product Filter">🛒 Group 1 — Brief 1: E-Commerce Product Filter</option>
+                  <option value="Group 2 — Brief 2: Loan & Scholarship Eligibility Checker">🏦 Group 2 — Brief 2: Loan & Scholarship Eligibility Checker</option>
+                  <option value="Group 3 — Brief 4: Invoice & Template Approval Generator">🧾 Group 3 — Brief 4: Invoice & Template Approval Generator</option>
+                  <option value="Brief 3: Dynamic Pricing & Formula Evaluator">🧮 Brief 3: Dynamic Pricing & Formula Evaluator</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="margin-top:22px;">
+              <label style="font-size:0.8rem; font-weight:800; color:var(--accent); text-transform:uppercase;">⚡ Select Difficulty Tier (6 Challenges per Tier · Up to AST Only)</label>
+              <div class="grid-4" style="margin-top:12px;">
+                ${Object.values(DIFFICULTIES).map(d => `
+                  <div class="diff-card ${d.id} ${arcade.difficulty === d.id ? 'selected' : ''}" data-diff="${d.id}">
+                    <div>
+                      <span class="badge" style="margin-bottom:8px;">${d.icon}${d.multiplier}x XP</span>
+                      <h3 style="font-size:1.05rem; margin-bottom:6px;">${d.name}</h3>
+                      <p style="font-size:0.82rem; color:var(--text-muted); line-height:1.45; margin-bottom:12px;">${d.desc}</p>
+                    </div>
+                    <div style="font-family:'JetBrains Mono'; font-size:0.74rem; color:#cbd5e1; border-top:1px solid rgba(255,255,255,0.08); padding-top:8px;">
+                      ⏱️ ${d.timePerQ}s / Q · ❤️ ${d.lives} Lives<br>
+                      💡 Hint: ${d.hintCost === 0 ? 'Free' : '-' + d.hintCost + ' XP'}
+                    </div>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; margin-top:24px;">
+              <span style="font-size:0.85rem; color:var(--text-muted);">🏆 Generates a printable / screenshot-ready <b>Midterm AST Completion Certificate</b>.</span>
+              <button class="btn ${arcade.difficulty === 'expert' ? 'btn-expert' : 'btn-primary'}" id="arc-start-btn" style="padding:13px 26px; font-size:1rem;">
+                🚀 Launch ${DIFFICULTIES[arcade.difficulty].name} Quest ▶
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("arc-brief").value = arcade.clientBrief;
+
+      document.querySelectorAll(".diff-card").forEach(card => {
+        card.onclick = () => {
+          sfxClick();
+          arcade.playerName = document.getElementById("arc-name").value;
+          arcade.clientBrief = document.getElementById("arc-brief").value;
+          arcade.difficulty = card.dataset.diff;
+          renderArcadeMenu(container);
+        };
+      });
+
+      document.getElementById("arc-start-btn").onclick = () => {
+        sfxClick();
+        arcade.playerName = document.getElementById("arc-name").value.trim() || "Compiler Student";
+        arcade.clientBrief = document.getElementById("arc-brief").value;
+        startArcadeRun(container);
+      };
+    }
+
+    function startArcadeRun(container) {
+      const diff = DIFFICULTIES[arcade.difficulty];
+      arcade.questions = JSON.parse(JSON.stringify(QUESTION_BANK[arcade.difficulty]));
+      arcade.qIndex = 0;
+      arcade.xp = 0;
+      arcade.streak = 0;
+      arcade.maxStreak = 0;
+      arcade.correctCount = 0;
+      arcade.lives = diff.lives;
+      arcade.screen = "play";
+      loadArcadeQuestion(container);
+    }
+
+    function loadArcadeQuestion(container) {
+      clearInterval(arcade.timerId);
+      if (arcade.qIndex >= arcade.questions.length || arcade.lives <= 0) {
+        arcade.screen = "end";
+        renderArcadeEnd(container);
         return;
       }
 
-      state.locked = false;
-      state.hintUsedOnCurrent = false;
-      const q = state.questions[state.qIndex];
+      const diff = DIFFICULTIES[arcade.difficulty];
+      const q = arcade.questions[arcade.qIndex];
+      arcade.locked = false;
+      arcade.hintUsed = false;
+      arcade.timeLeft = diff.timePerQ;
 
       if (q.type === "lexer-sort") {
-        state.selectedTokens = [];
-        state.availableTokens = shuffle([...q.target, ...(q.distractors || [])]);
+        arcade.selectedTokens = [];
+        arcade.availableTokens = shuffle([...q.target, ...(q.distractors || [])]);
       } else if (q.type === "ast-builder") {
-        state.astValues = {};
-        state.activeAstSlot = 0;
+        arcade.astValues = {};
+        arcade.activeAstSlot = 0;
       } else if (q.type === "mcq") {
-        // Dynamically shuffle MCQ options so Option A is NOT always the answer!
-        const taggedOptions = q.options.map((text, idx) => ({
-          text,
-          isCorrect: idx === q.correct
-        }));
-        const mixed = shuffle(taggedOptions);
-        state.shuffledOptions = mixed.map(item => item.text);
-        state.shuffledCorrectIndex = mixed.findIndex(item => item.isCorrect);
+        const tagged = q.options.map((text, idx) => ({ text, isCorrect: idx === q.correct }));
+        const mixed = shuffle(tagged);
+        arcade.shuffledOptions = mixed.map(i => i.text);
+        arcade.shuffledCorrectIndex = mixed.findIndex(i => i.isCorrect);
       }
 
-      startTimer();
-      renderCurrentQuestion();
+      arcade.timerId = setInterval(() => {
+        if (arcade.locked) return;
+        arcade.timeLeft--;
+        const timerEl = document.getElementById("arc-timer");
+        if (timerEl) timerEl.textContent = `⏱️ ${arcade.timeLeft}s`;
+        if (arcade.timeLeft <= 0) {
+          clearInterval(arcade.timerId);
+          gradeArcadeAnswer(container, false, "⏱️ Time's up! Stage timed out.");
+        }
+      }, 1000);
+
+      renderArcadeQuestion(container);
     }
 
-    /********************************************************************
-     * 7. RENDER ACTIVE QUESTION (3 STAGES UP TO AST ONLY)
-     ********************************************************************/
-    function renderCurrentQuestion(feedbackHTML = "") {
-      const q = state.questions[state.qIndex];
-      const diff = DIFFICULTIES[state.difficulty];
+    function renderArcadeQuestion(container, feedbackHTML = "") {
+      const diff = DIFFICULTIES[arcade.difficulty];
+      const q = arcade.questions[arcade.qIndex];
+      const livesStr = "❤️".repeat(Math.max(0, arcade.lives)) + "🖤".repeat(Math.max(0, diff.lives - arcade.lives));
 
-      // 3-Stage Pipeline (Up to AST Only)
       const stages = [
         { num: 1, name: "1. Lexer (🪙 Coin Sorter)" },
         { num: 2, name: "2. TypeScript (🫙 Labeled Jars)" },
         { num: 3, name: "3. AST (🏢 Office Org Chart)" }
       ];
 
-      const progressHTML = `
-        <div class="stage-progress">
-          ${stages.map(s => `
-            <div class="stage-step ${q.stage === s.num ? 'active' : (q.stage > s.num ? 'done' : '')}">
-              <span>${s.name}</span>
-              <span>${q.stage === s.num ? '◀ ACTIVE' : (q.stage > s.num ? '✓ DONE' : 'UP NEXT')}</span>
-            </div>
-          `).join("")}
-        </div>
-      `;
+      let body = "";
 
-      let interactiveBody = "";
-
-      // --- TYPE 1: COIN SORTER (LEXER) ---
       if (q.type === "lexer-sort") {
-        interactiveBody = `
-          <div class="code-terminal">Rule Input:   ${escapeHTML(q.rule)}</div>
-
-          <div style="font-size:0.82rem; font-weight:700; color:var(--cyan); margin-bottom:6px; text-transform:uppercase;">
-            📥 Sorted Token Tray (Click a token here to remove it):
+        body = `
+          <div class="code-block" style="margin:12px 0;">Rule Input:   ${escapeHTML(q.rule)}</div>
+          <div style="font-size:0.8rem; font-weight:800; color:var(--accent); margin-bottom:6px;">📥 SORTED TOKEN TRAY (CLICK TO REMOVE):</div>
+          <div class="token-tray">
+            ${arcade.selectedTokens.length === 0
+              ? `<span style="color:var(--text-muted); font-size:0.86rem;">Click tokens from the pool below in left-to-right order...</span>`
+              : arcade.selectedTokens.map((t, i) => `
+                  <div class="token-coin" data-remove="${i}">
+                    <span class="t-val">${escapeHTML(t.val)}</span>
+                    <span class="t-type">${t.type}</span>
+                  </div>
+                `).join("")}
           </div>
-          <div class="token-tray" id="lexer-tray">
-            ${state.selectedTokens.length === 0 
-              ? `<span style="color:var(--text-muted); font-size:0.88rem;">Click tokens from the pool below in left-to-right order...</span>`
-              : state.selectedTokens.map((t, idx) => `
-                <div class="token-coin" data-remove="${idx}">
-                  <span class="t-val">${escapeHTML(t.val)}</span>
-                  <span class="t-type">${t.type}</span>
-                </div>
-              `).join("")
-            }
-          </div>
-
-          <div style="font-size:0.82rem; font-weight:700; color:var(--amber); margin-bottom:6px; text-transform:uppercase;">
-            🪙 Unsorted Coin Pool ${q.distractors?.length ? '(Beware of Trap Tokens!)' : ''}:
-          </div>
-          <div class="token-pool" id="lexer-pool">
-            ${state.availableTokens.map((t, idx) => `
-              <div class="token-coin" data-pick="${idx}">
+          <div style="font-size:0.8rem; font-weight:800; color:var(--warning); margin-bottom:6px;">🪙 UNSORTED TOKEN POOL:</div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;">
+            ${arcade.availableTokens.map((t, i) => `
+              <div class="token-coin" data-pick="${i}">
                 <span class="t-val">${escapeHTML(t.val)}</span>
                 <span class="t-type">${t.type}</span>
               </div>
             `).join("")}
           </div>
-
-          <div style="display:flex; gap:12px; justify-content:flex-end;">
-            <button class="btn" id="clear-tokens-btn" ${state.locked ? 'disabled' : ''}>↺ Reset Tray</button>
-            <button class="btn btn-primary" id="submit-lexer-btn" ${state.locked ? 'disabled' : ''}>✓ Verify Token Stream</button>
+          <div style="display:flex; justify-content:flex-end; gap:10px;">
+            <button class="btn" id="arc-reset-tokens" ${arcade.locked ? 'disabled' : ''}>↺ Reset Tray</button>
+            <button class="btn btn-primary" id="arc-submit-lexer" ${arcade.locked ? 'disabled' : ''}>✓ Verify Token Stream</button>
           </div>
         `;
-      }
+      } else if (q.type === "ast-builder") {
+        const slotHTML = (idx) => {
+          const s = q.slots[idx];
+          const val = arcade.astValues[idx] || "Click to Fill";
+          return `
+            <div class="ast-slot ${arcade.activeAstSlot === idx ? 'active-slot' : ''}" data-slot="${idx}">
+              <span class="slot-role">${s.role}</span>
+              <span class="slot-val">${escapeHTML(val)}</span>
+            </div>
+          `;
+        };
 
-      // --- TYPE 2: AST ORG CHART BUILDER ---
-      else if (q.type === "ast-builder") {
-        let treeLayoutHTML = "";
-
+        let treeHTML = "";
         if (q.layout === "two-level") {
-          treeLayoutHTML = `
-            <div class="ast-row">
-              ${renderAstSlot(0, q.slots[0])}
-            </div>
-            <div style="color:var(--cyan); font-family:'JetBrains Mono'; font-weight:700;">╱ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ╲</div>
-            <div class="ast-row">
-              ${renderAstSlot(1, q.slots[1])}
-              ${renderAstSlot(2, q.slots[2])}
-            </div>
+          treeHTML = `
+            <div class="ast-row">${slotHTML(0)}</div>
+            <div style="color:var(--accent); font-family:'JetBrains Mono';">╱ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ╲</div>
+            <div class="ast-row">${slotHTML(1)}${slotHTML(2)}</div>
           `;
         } else if (q.layout === "three-level-right") {
-          treeLayoutHTML = `
-            <div class="ast-row">${renderAstSlot(0, q.slots[0])}</div>
-            <div style="color:var(--cyan); font-family:'JetBrains Mono'; font-weight:700;">╱ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ╲</div>
-            <div class="ast-row">
-              ${renderAstSlot(1, q.slots[1])}
-              ${renderAstSlot(2, q.slots[2])}
-            </div>
-            <div style="color:var(--amber); font-family:'JetBrains Mono'; font-weight:700; padding-left:220px;">╱ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ╲</div>
-            <div class="ast-row" style="padding-left:180px;">
-              ${renderAstSlot(3, q.slots[3])}
-              ${renderAstSlot(4, q.slots[4])}
-            </div>
+          treeHTML = `
+            <div class="ast-row">${slotHTML(0)}</div>
+            <div style="color:var(--accent); font-family:'JetBrains Mono';">╱ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ╲</div>
+            <div class="ast-row">${slotHTML(1)}${slotHTML(2)}</div>
+            <div style="color:var(--warning); font-family:'JetBrains Mono'; padding-left:210px;">╱ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ╲</div>
+            <div class="ast-row" style="padding-left:170px;">${slotHTML(3)}${slotHTML(4)}</div>
           `;
-        } else if (q.layout === "three-level-left") {
-          treeLayoutHTML = `
-            <div class="ast-row">${renderAstSlot(0, q.slots[0])}</div>
-            <div style="color:var(--cyan); font-family:'JetBrains Mono'; font-weight:700;">╱ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ╲</div>
-            <div class="ast-row">
-              ${renderAstSlot(1, q.slots[1])}
-              ${renderAstSlot(4, q.slots[4])}
-            </div>
-            <div style="color:var(--amber); font-family:'JetBrains Mono'; font-weight:700; padding-right:220px;">╱ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ╲</div>
-            <div class="ast-row" style="padding-right:180px;">
-              ${renderAstSlot(2, q.slots[2])}
-              ${renderAstSlot(3, q.slots[3])}
-            </div>
+        } else {
+          treeHTML = `
+            <div class="ast-row">${slotHTML(0)}</div>
+            <div style="color:var(--accent); font-family:'JetBrains Mono';">╱ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ╲</div>
+            <div class="ast-row">${slotHTML(1)}${slotHTML(4)}</div>
+            <div style="color:var(--warning); font-family:'JetBrains Mono'; padding-right:210px;">╱ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ╲</div>
+            <div class="ast-row" style="padding-right:170px;">${slotHTML(2)}${slotHTML(3)}</div>
           `;
         }
 
-        interactiveBody = `
-          <div class="code-terminal">Rule Input:   ${escapeHTML(q.rule)}</div>
-          <div class="ast-diagram">
-            ${treeLayoutHTML}
-          </div>
-          <div style="font-size:0.82rem; font-weight:700; color:var(--amber); margin-bottom:8px; text-transform:uppercase;">
-            🏢 Click a Node Value to Assign to the Highlighted Org Chart Slot:
-          </div>
-          <div class="token-pool">
+        body = `
+          <div class="code-block" style="margin:12px 0;">Rule Input:   ${escapeHTML(q.rule)}</div>
+          <div class="ast-diagram">${treeHTML}</div>
+          <div style="font-size:0.8rem; font-weight:800; color:var(--warning); margin-bottom:8px;">🏢 CLICK A NODE TO FILL HIGHLIGHTED ORG CHART SLOT:</div>
+          <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
             ${q.choices.map(c => `
-              <button class="btn" data-ast-choice="${escapeHTML(c)}" ${state.locked ? 'disabled' : ''} style="font-family:'JetBrains Mono';">
-                [ ${escapeHTML(c)} ]
-              </button>
+              <button class="btn" data-ast-choice="${escapeHTML(c)}" ${arcade.locked ? 'disabled' : ''} style="font-family:'JetBrains Mono';">[ ${escapeHTML(c)} ]</button>
             `).join("")}
           </div>
-          <div style="display:flex; justify-content:flex-end; margin-top:10px;">
-            <button class="btn btn-primary" id="submit-ast-btn" ${state.locked ? 'disabled' : ''}>✓ Lock In AST Org Chart</button>
+          <div style="display:flex; justify-content:flex-end;">
+            <button class="btn btn-primary" id="arc-submit-ast" ${arcade.locked ? 'disabled' : ''}>✓ Lock In AST Org Chart</button>
           </div>
         `;
-      }
-
-      // --- TYPE 3: MULTIPLE CHOICE (SHUFFLED OPTIONS) ---
-      else if (q.type === "mcq") {
-        interactiveBody = `
-          ${q.code ? `<div class="code-terminal">${escapeHTML(q.code)}</div>` : ""}
-          <div class="options-grid">
-            ${state.shuffledOptions.map((opt, idx) => `
-              <button class="option-btn" data-opt="${idx}" ${state.locked ? 'disabled' : ''}>
-                <span style="color:var(--cyan); font-weight:800; margin-right:8px;">[${String.fromCharCode(65 + idx)}]</span>${escapeHTML(opt)}
+      } else {
+        body = `
+          ${q.code ? `<div class="code-block" style="margin:12px 0;">${escapeHTML(q.code)}</div>` : ""}
+          <div class="grid-2" style="margin-top:14px;">
+            ${arcade.shuffledOptions.map((opt, idx) => `
+              <button class="option-btn" data-opt="${idx}" ${arcade.locked ? 'disabled' : ''}>
+                <span style="color:var(--accent); font-weight:800; margin-right:8px;">[${String.fromCharCode(65 + idx)}]</span>${escapeHTML(opt)}
               </button>
             `).join("")}
           </div>
         `;
       }
 
-      appStage.innerHTML = `
-        ${progressHTML}
-        <div class="card-panel">
-          <div class="challenge-kicker">
-            <span class="kicker-tag">${q.kicker}</span>
-            <span style="font-family:'JetBrains Mono'; font-size:0.84rem; color:var(--text-muted);">
-              CHALLENGE ${state.qIndex + 1} OF ${state.questions.length}
-            </span>
+      container.innerHTML = `
+        <div class="page-container">
+          <div class="arcade-hud">
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <span class="hud-pill">${diff.label}</span>
+              <span class="hud-pill" style="color:var(--accent);">⚡ ${arcade.xp} XP</span>
+              <span class="hud-pill" style="color:var(--warning);">🔥 ${arcade.streak}x</span>
+              <span class="hud-pill">${livesStr}</span>
+              <span class="hud-pill" id="arc-timer">⏱️ ${arcade.timeLeft}s</span>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn" id="arc-sfx-btn">${sfxEnabled ? '🔊 SFX' : '🔇 Muted'}</button>
+              <button class="btn" id="arc-menu-btn">⚙️ Change Tier</button>
+            </div>
           </div>
 
-          <h2 style="font-size:1.35rem; font-weight:800; line-height:1.38; margin-bottom:8px;">
-            ${q.prompt}
-          </h2>
-
-          ${interactiveBody}
-
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08); flex-wrap:wrap; gap:10px;">
-            <button class="btn" id="hint-btn" ${state.locked || state.hintUsedOnCurrent ? 'disabled' : ''} style="font-size:0.82rem;">
-              💡 Request Analogy Hint (${diff.hintCost === 0 ? 'FREE' : '-' + diff.hintCost + ' XP'})
-            </button>
-            <span style="font-size:0.8rem; color:var(--text-muted);">Assigned Group: <b>${escapeHTML(state.clientBrief)}</b></span>
+          <div class="pipeline-bar" style="margin-top:0; margin-bottom:18px; padding-top:0; border-top:none;">
+            ${stages.map(s => `
+              <div class="pipe-step ${q.stage === s.num ? 'active' : (q.stage > s.num ? 'done' : '')}">
+                <span>${s.name}</span>
+                <span>${q.stage === s.num ? '◀ ACTIVE' : (q.stage > s.num ? '✓ DONE' : 'UP NEXT')}</span>
+              </div>
+            `).join("")}
           </div>
 
-          ${state.hintUsedOnCurrent ? `<div class="hint-box"><b>💡 Instructor Hint:</b> ${escapeHTML(q.hint)}</div>` : ""}
-          ${feedbackHTML}
+          <div class="info-card" style="padding:28px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span class="badge">${q.kicker}</span>
+              <span style="font-family:'JetBrains Mono'; font-size:0.82rem; color:var(--text-muted);">CHALLENGE ${arcade.qIndex + 1} OF ${arcade.questions.length}</span>
+            </div>
+            <h2 style="font-size:1.3rem; font-weight:800; margin-bottom:10px;">${q.prompt}</h2>
+            ${body}
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08); flex-wrap:wrap; gap:10px;">
+              <button class="btn" id="arc-hint-btn" ${arcade.locked || arcade.hintUsed ? 'disabled' : ''}>
+                💡 Analogy Hint (${diff.hintCost === 0 ? 'FREE' : '-' + diff.hintCost + ' XP'})
+              </button>
+              <span style="font-size:0.8rem; color:var(--text-muted);">Group: <b>${escapeHTML(arcade.clientBrief)}</b></span>
+            </div>
+
+            ${arcade.hintUsed ? `<div class="analogy-box" style="margin-top:12px;"><div class="analogy-label">💡 INSTRUCTOR HINT</div><p style="font-size:0.9rem;">${escapeHTML(q.hint)}</p></div>` : ""}
+            ${feedbackHTML}
+          </div>
         </div>
       `;
 
-      bindQuestionEvents(q);
-    }
+      document.getElementById("arc-sfx-btn").onclick = () => { sfxEnabled = !sfxEnabled; renderArcadeQuestion(container, feedbackHTML); };
+      document.getElementById("arc-menu-btn").onclick = () => { arcade.screen = "menu"; renderArcadeMenu(container); };
 
-    function renderAstSlot(idx, slotObj) {
-      const val = state.astValues[idx] || "Click to Fill";
-      const isActive = state.activeAstSlot === idx;
-      return `
-        <div class="ast-slot ${isActive ? 'active-slot' : ''}" data-slot="${idx}">
-          <span class="slot-role">${slotObj.role}</span>
-          <span class="slot-val">${escapeHTML(val)}</span>
-        </div>
-      `;
-    }
-
-    /********************************************************************
-     * 8. EVENT HANDLERS & GRADING LOGIC
-     ********************************************************************/
-    function bindQuestionEvents(q) {
-      const diff = DIFFICULTIES[state.difficulty];
-
-      const hintBtn = document.getElementById("hint-btn");
+      const hintBtn = document.getElementById("arc-hint-btn");
       if (hintBtn) {
         hintBtn.onclick = () => {
           sfxClick();
-          state.hintUsedOnCurrent = true;
-          state.xp = Math.max(0, state.xp - diff.hintCost);
-          updateHUD();
-          renderCurrentQuestion();
+          arcade.hintUsed = true;
+          arcade.xp = Math.max(0, arcade.xp - diff.hintCost);
+          renderArcadeQuestion(container, feedbackHTML);
         };
       }
 
-      if (q.type === "lexer-sort" && !state.locked) {
+      if (q.type === "lexer-sort" && !arcade.locked) {
         document.querySelectorAll("[data-pick]").forEach(el => {
           el.onclick = () => {
             sfxClick();
             const idx = Number(el.dataset.pick);
-            state.selectedTokens.push(state.availableTokens[idx]);
-            state.availableTokens.splice(idx, 1);
-            renderCurrentQuestion();
+            arcade.selectedTokens.push(arcade.availableTokens[idx]);
+            arcade.availableTokens.splice(idx, 1);
+            renderArcadeQuestion(container);
           };
         });
-
         document.querySelectorAll("[data-remove]").forEach(el => {
           el.onclick = () => {
             sfxClick();
             const idx = Number(el.dataset.remove);
-            state.availableTokens.push(state.selectedTokens[idx]);
-            state.selectedTokens.splice(idx, 1);
-            renderCurrentQuestion();
+            arcade.availableTokens.push(arcade.selectedTokens[idx]);
+            arcade.selectedTokens.splice(idx, 1);
+            renderArcadeQuestion(container);
           };
         });
-
-        document.getElementById("clear-tokens-btn").onclick = () => {
+        document.getElementById("arc-reset-tokens").onclick = () => {
           sfxClick();
-          state.availableTokens.push(...state.selectedTokens);
-          state.selectedTokens = [];
-          renderCurrentQuestion();
+          arcade.availableTokens.push(...arcade.selectedTokens);
+          arcade.selectedTokens = [];
+          renderArcadeQuestion(container);
         };
-
-        document.getElementById("submit-lexer-btn").onclick = () => {
-          const isMatch = state.selectedTokens.length === q.target.length &&
-            state.selectedTokens.every((t, i) => t.val === q.target[i].val && t.type === q.target[i].type);
-          const expectedStr = q.target.map(t => `[${t.val}:${t.type}]`).join(" ");
-          handleAnswer(
-            isMatch,
-            isMatch
-              ? "Spot-on token stream! The Coin Sorter labeled every token accurately."
-              : `Token mismatch! Expected order: ${expectedStr}`
-          );
+        document.getElementById("arc-submit-lexer").onclick = () => {
+          const ok = arcade.selectedTokens.length === q.target.length &&
+            arcade.selectedTokens.every((t, i) => t.val === q.target[i].val && t.type === q.target[i].type);
+          const exp = q.target.map(t => `[${t.val}:${t.type}]`).join(" ");
+          gradeArcadeAnswer(container, ok, ok ? "Spot-on token stream! The Coin Sorter labeled every token." : `Mismatch! Expected: ${exp}`);
         };
       }
 
-      if (q.type === "ast-builder" && !state.locked) {
+      if (q.type === "ast-builder" && !arcade.locked) {
         document.querySelectorAll("[data-slot]").forEach(el => {
-          el.onclick = () => {
-            sfxClick();
-            state.activeAstSlot = Number(el.dataset.slot);
-            renderCurrentQuestion();
-          };
+          el.onclick = () => { sfxClick(); arcade.activeAstSlot = Number(el.dataset.slot); renderArcadeQuestion(container); };
         });
-
         document.querySelectorAll("[data-ast-choice]").forEach(el => {
           el.onclick = () => {
             sfxClick();
-            state.astValues[state.activeAstSlot] = el.dataset.astChoice;
-            if (state.activeAstSlot < q.slots.length - 1) {
-              state.activeAstSlot++;
-            }
-            renderCurrentQuestion();
+            arcade.astValues[arcade.activeAstSlot] = el.dataset.astChoice;
+            if (arcade.activeAstSlot < q.slots.length - 1) arcade.activeAstSlot++;
+            renderArcadeQuestion(container);
           };
         });
-
-        document.getElementById("submit-ast-btn").onclick = () => {
-          const isMatch = q.slots.every((s, idx) => state.astValues[idx] === s.answer);
-          const expectedSummary = q.slots.map(s => `${s.role}: [${s.answer}]`).join(" | ");
-          handleAnswer(
-            isMatch,
-            isMatch
-              ? "AST Org Chart verified! Boss and child nodes are wired with proper hierarchy."
-              : `Org Chart hierarchy error! Correct structure: ${expectedSummary}`
-          );
+        document.getElementById("arc-submit-ast").onclick = () => {
+          const ok = q.slots.every((s, idx) => arcade.astValues[idx] === s.answer);
+          const exp = q.slots.map(s => `${s.role}: [${s.answer}]`).join(" | ");
+          gradeArcadeAnswer(container, ok, ok ? "AST Org Chart verified! Boss and child nodes match." : `Hierarchy mismatch! Expected: ${exp}`);
         };
       }
 
-      if (q.type === "mcq" && !state.locked) {
+      if (q.type === "mcq" && !arcade.locked) {
         document.querySelectorAll("[data-opt]").forEach(btn => {
           btn.onclick = () => {
             const picked = Number(btn.dataset.opt);
-            const isCorrect = picked === state.shuffledCorrectIndex;
-            const correctOptionLetter = String.fromCharCode(65 + state.shuffledCorrectIndex);
-            const correctOptionText = state.shuffledOptions[state.shuffledCorrectIndex];
-            handleAnswer(
-              isCorrect,
-              isCorrect
-                ? "Compiler check passed! Clean logic."
-                : `Compiler error! Correct answer was [${correctOptionLetter}]: ${correctOptionText}`
-            );
+            const ok = picked === arcade.shuffledCorrectIndex;
+            const letter = String.fromCharCode(65 + arcade.shuffledCorrectIndex);
+            gradeArcadeAnswer(container, ok, ok ? "Compiler check passed!" : `Compiler error! Correct option was [${letter}]: ${arcade.shuffledOptions[arcade.shuffledCorrectIndex]}`);
           };
         });
       }
     }
 
-    function handleAnswer(isCorrect, message) {
-      clearInterval(state.timerId);
-      state.locked = true;
-      const diff = DIFFICULTIES[state.difficulty];
+    function gradeArcadeAnswer(container, isCorrect, msg) {
+      clearInterval(arcade.timerId);
+      arcade.locked = true;
+      const diff = DIFFICULTIES[arcade.difficulty];
 
       if (isCorrect) {
         sfxSuccess();
-        state.streak++;
-        if (state.streak > state.maxStreak) state.maxStreak = state.streak;
-        state.correctCount++;
-        const timeBonus = state.timeLeft * 3;
-        const streakBonus = state.streak * 25;
-        const earned = Math.round((120 + timeBonus + streakBonus) * diff.multiplier);
-        state.xp += earned;
-        message += ` (+${earned} XP)`;
+        arcade.streak++;
+        if (arcade.streak > arcade.maxStreak) arcade.maxStreak = arcade.streak;
+        arcade.correctCount++;
+        const earned = Math.round((120 + arcade.timeLeft * 3 + arcade.streak * 25) * diff.multiplier);
+        arcade.xp += earned;
+        msg += ` (+${earned} XP)`;
       } else {
         sfxError();
-        state.streak = 0;
-        state.lives--;
+        arcade.streak = 0;
+        arcade.lives--;
       }
 
-      updateHUD();
-
-      const feedbackHTML = `
+      const fb = `
         <div class="feedback-banner ${isCorrect ? 'correct' : 'wrong'}">
           <div>
             <strong>${isCorrect ? '✅ STAGE CHECK PASSED!' : '❌ COMPILER / AST ERROR!'}</strong>
-            <div style="font-size:0.9rem; margin-top:4px; white-space:pre-wrap;">${escapeHTML(message)}</div>
+            <div style="font-size:0.88rem; margin-top:4px; white-space:pre-wrap;">${escapeHTML(msg)}</div>
           </div>
-          <button class="btn ${isCorrect ? 'btn-primary' : ''}" id="next-q-btn">
-            ${(state.qIndex + 1 < state.questions.length && state.lives > 0) ? 'Next Challenge ▶' : 'View Final Results 🏆'}
+          <button class="btn btn-primary" id="arc-next-btn">
+            ${(arcade.qIndex + 1 < arcade.questions.length && arcade.lives > 0) ? 'Next Challenge ▶' : 'View Results 🏆'}
           </button>
         </div>
       `;
 
-      renderCurrentQuestion(feedbackHTML);
-
-      document.getElementById("next-q-btn").onclick = () => {
+      renderArcadeQuestion(container, fb);
+      document.getElementById("arc-next-btn").onclick = () => {
         sfxClick();
-        state.qIndex++;
-        loadQuestion();
+        arcade.qIndex++;
+        loadArcadeQuestion(container);
       };
     }
 
-    /********************************************************************
-     * 9. END SCREEN & VERIFIABLE COMPLETION CERTIFICATE
-     ********************************************************************/
-    function renderEndScreen() {
-      clearInterval(state.timerId);
+    function renderArcadeEnd(container) {
       sfxFanfare();
-      const diff = DIFFICULTIES[state.difficulty];
-      const totalQ = state.questions.length;
-      const accuracy = Math.round((state.correctCount / totalQ) * 100);
-      const survived = state.lives > 0;
+      const diff = DIFFICULTIES[arcade.difficulty];
+      const total = arcade.questions.length;
+      const acc = Math.round((arcade.correctCount / total) * 100);
+      const survived = arcade.lives > 0;
+      const verifyCode = `AST-${diff.id.toUpperCase().slice(0,3)}-${arcade.xp}-${acc}`;
 
-      // Generate verifiable classroom ticket hash
-      const rawHash = `${state.playerName}-${state.difficulty}-${state.xp}-${accuracy}`;
-      let hashNum = 0;
-      for (let i = 0; i < rawHash.length; i++) {
-        hashNum = ((hashNum << 5) - hashNum) + rawHash.charCodeAt(i);
-        hashNum |= 0;
-      }
-      const verifyCode = `AST-${diff.id.toUpperCase().slice(0,3)}-${Math.abs(hashNum).toString(16).toUpperCase().slice(0, 6)}`;
-
-      let rankTitle = "🪙 Apprentice Coin Sorter (Lexer)";
-      if (accuracy === 100 && state.difficulty === "expert") rankTitle = "👑 GRANDMASTER AST ARCHITECT";
-      else if (state.difficulty === "expert" && survived) rankTitle = "🔥 Certified Expert AST Architect";
-      else if (accuracy >= 80) rankTitle = "🏢 Senior AST Org Chart Engineer";
-      else if (accuracy >= 60) rankTitle = "🫙 TypeScript & Tokenizer Builder";
-
-      appStage.innerHTML = `
-        <div class="card-panel">
-          <div style="text-align:center; margin-bottom:18px;">
-            <span class="kicker-tag">${survived ? 'LEXER TO AST CAMPAIGN COMPLETE' : 'PIPELINE HALTED · OUT OF LIVES'}</span>
-            <h1 style="font-size:2.2rem; font-weight:900; margin-top:10px;">
-              ${survived ? '🎉 Midterm AST Quest Cleared!' : '💥 Compiler Halted — Try Again!'}
-            </h1>
-          </div>
-
-          <!-- PRINTABLE / SCREENSHOT CERTIFICATE -->
-          <div class="cert-card">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; border-bottom:1px solid rgba(255,255,255,0.15); padding-bottom:16px;">
+      container.innerHTML = `
+        <div class="page-container">
+          <div class="info-card" style="padding:32px; border:2px solid var(--accent);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; border-bottom:1px solid var(--border); padding-bottom:16px;">
               <div>
-                <div style="font-family:'JetBrains Mono'; font-size:0.78rem; color:var(--cyan); font-weight:800;">
-                  PROGRAMMING LANGUAGES WITH COMPILER · INSTRUCTOR: RON HEDWIG
-                </div>
-                <h2 style="font-size:1.6rem; font-weight:900; margin-top:4px;">${escapeHTML(state.playerName)}</h2>
-                <div style="font-size:0.9rem; color:var(--text-muted); margin-top:2px;">${escapeHTML(state.clientBrief)}</div>
+                <span class="badge">PROGRAMMING LANGUAGES WITH COMPILER · MIDTERM AST CERTIFICATE</span>
+                <h2 style="font-size:1.8rem; font-weight:900; margin-top:8px;">${escapeHTML(arcade.playerName)}</h2>
+                <p style="color:var(--text-muted);">${escapeHTML(arcade.clientBrief)}</p>
               </div>
               <div style="text-align:right;">
-                <span class="kicker-tag" style="font-size:0.85rem;">${diff.label}</span>
-                <div style="font-family:'JetBrains Mono'; font-size:0.78rem; color:var(--text-muted); margin-top:6px;">
-                  VERIFY CODE: <b>${verifyCode}</b>
-                </div>
+                <span class="badge">${diff.label}</span>
+                <div style="font-family:'JetBrains Mono'; font-size:0.8rem; color:var(--text-muted); margin-top:6px;">CODE: <b>${verifyCode}</b></div>
               </div>
             </div>
 
-            <div class="diff-grid" style="margin-top:20px; margin-bottom:10px;">
-              <div class="info-card" style="background:rgba(0,0,0,0.25); padding:14px; border-radius:12px;">
-                <div style="font-size:0.75rem; color:var(--text-muted);">FINAL SCORE</div>
-                <div style="font-size:1.65rem; font-weight:900; color:var(--cyan); font-family:'JetBrains Mono';">${state.xp} XP</div>
-              </div>
-              <div class="info-card" style="background:rgba(0,0,0,0.25); padding:14px; border-radius:12px;">
-                <div style="font-size:0.75rem; color:var(--text-muted);">ACCURACY</div>
-                <div style="font-size:1.65rem; font-weight:900; color:var(--emerald); font-family:'JetBrains Mono';">${accuracy}% (${state.correctCount}/${totalQ})</div>
-              </div>
-              <div class="info-card" style="background:rgba(0,0,0,0.25); padding:14px; border-radius:12px;">
-                <div style="font-size:0.75rem; color:var(--text-muted);">MAX STREAK</div>
-                <div style="font-size:1.65rem; font-weight:900; color:var(--amber); font-family:'JetBrains Mono';">${state.maxStreak}x 🔥</div>
-              </div>
-              <div class="info-card" style="background:rgba(0,0,0,0.25); padding:14px; border-radius:12px;">
-                <div style="font-size:0.75rem; color:var(--text-muted);">EARNED RANK</div>
-                <div style="font-size:0.95rem; font-weight:800; color:#fff; margin-top:4px;">${rankTitle}</div>
-              </div>
+            <div class="grid-4" style="margin-top:20px;">
+              <div class="info-card"><h4>FINAL XP</h4><p style="font-size:1.6rem; font-weight:900; color:var(--accent); font-family:'JetBrains Mono';">${arcade.xp} XP</p></div>
+              <div class="info-card"><h4>ACCURACY</h4><p style="font-size:1.6rem; font-weight:900; color:var(--success); font-family:'JetBrains Mono';">${acc}% (${arcade.correctCount}/${total})</p></div>
+              <div class="info-card"><h4>MAX STREAK</h4><p style="font-size:1.6rem; font-weight:900; color:var(--warning); font-family:'JetBrains Mono';">${arcade.maxStreak}x 🔥</p></div>
+              <div class="info-card"><h4>STATUS</h4><p style="font-size:1.05rem; font-weight:800; color:#fff;">${survived ? '🏆 AST Cleared!' : '💥 Out of Lives'}</p></div>
             </div>
-          </div>
 
-          <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:22px;">
-            <button class="btn" onclick="window.print()">🖨️ Print / Save Certificate as PDF</button>
-            <div style="display:flex; gap:12px; flex-wrap:wrap;">
-              <button class="btn" id="change-diff-btn">⚙️ Change Difficulty</button>
-              ${state.difficulty !== "expert" ? `
-                <button class="btn btn-expert" id="try-expert-btn">🔥 Challenge Expert Architect Mode</button>
-              ` : `
-                <button class="btn btn-primary" id="replay-btn">↺ Replay Expert Mode</button>
-              `}
+            <div class="no-print" style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-top:24px;">
+              <button class="btn" onclick="window.print()">🖨️ Print / Save Certificate as PDF</button>
+              <div style="display:flex; gap:10px;">
+                <button class="btn" id="arc-back-menu">⚙️ Change Difficulty</button>
+                <button class="btn btn-primary" id="arc-replay">↺ Play Again</button>
+              </div>
             </div>
           </div>
         </div>
       `;
 
-      document.getElementById("change-diff-btn").onclick = () => renderStartScreen();
-      const tryExpertBtn = document.getElementById("try-expert-btn");
-      if (tryExpertBtn) {
-        tryExpertBtn.onclick = () => {
-          state.difficulty = "expert";
-          startGame("expert");
+      document.getElementById("arc-back-menu").onclick = () => { arcade.screen = "menu"; renderArcadeMenu(container); };
+      document.getElementById("arc-replay").onclick = () => startArcadeRun(container);
+    }
+
+    /********************************************************************
+     * 7. VIEW 3: LIVE LEXER -> AST PLAYGROUND (STRICTLY UP TO AST ONLY)
+     ********************************************************************/
+    const PRESETS = [
+      { name: "Group 1 — Brief 1: Product Filter (Simple AND)", rule: 'price > 100 AND category = "Electronics"' },
+      { name: "Group 2 — Brief 2: Loan Eligibility (Simple OR)", rule: 'income >= 35000 OR creditScore >= 700' },
+      { name: "Group 3 — Brief 4: Invoice Approval (NEQ & GTE)", rule: 'amount >= 10000 AND vendor != "Internal"' },
+      { name: "Midterm Precedence: AND Binds Tighter Than OR", rule: 'vip = "Gold" OR price > 100 AND stock > 0' },
+      { name: "Expert Override: Parentheses Before AND", rule: '(vip = "Gold" OR price > 100) AND stock > 0' }
+    ];
+
+    function tokenizeRule(input) {
+      const tokens = [];
+      let i = 0;
+      while (i < input.length) {
+        const ch = input[i];
+        if (/\s/.test(ch)) { i++; continue; }
+        if (ch === "(") { tokens.push({ type: "LPAREN", value: "(" }); i++; continue; }
+        if (ch === ")") { tokens.push({ type: "RPAREN", value: ")" }); i++; continue; }
+        if (ch === '"' || ch === "'") {
+          const quote = ch;
+          let str = "";
+          i++;
+          while (i < input.length && input[i] !== quote) { str += input[i++]; }
+          i++;
+          tokens.push({ type: "STRING", value: str });
+          continue;
+        }
+        if (/[0-9]/.test(ch)) {
+          let num = "";
+          while (i < input.length && /[0-9.]/.test(input[i])) { num += input[i++]; }
+          tokens.push({ type: "NUMBER", value: Number(num) });
+          continue;
+        }
+        const twoChar = input.slice(i, i + 2);
+        if (twoChar === ">=") { tokens.push({ type: "GTE", value: ">=" }); i += 2; continue; }
+        if (twoChar === "<=") { tokens.push({ type: "LTE", value: "<=" }); i += 2; continue; }
+        if (twoChar === "!=") { tokens.push({ type: "NEQ", value: "!=" }); i += 2; continue; }
+        if (twoChar === "==") { tokens.push({ type: "EQ", value: "==" }); i += 2; continue; }
+        if (ch === ">") { tokens.push({ type: "GT", value: ">" }); i++; continue; }
+        if (ch === "<") { tokens.push({ type: "LT", value: "<" }); i++; continue; }
+        if (ch === "=") { tokens.push({ type: "EQ", value: "=" }); i++; continue; }
+        if (/[a-zA-Z_]/.test(ch)) {
+          let ident = "";
+          while (i < input.length && /[a-zA-Z0-9_]/.test(input[i])) { ident += input[i++]; }
+          const upper = ident.toUpperCase();
+          if (upper === "AND" || upper === "OR") {
+            tokens.push({ type: upper, value: upper });
+          } else {
+            tokens.push({ type: "FIELD", value: ident });
+          }
+          continue;
+        }
+        i++;
+      }
+      return tokens;
+    }
+
+    function buildASTFromTokens(tokens) {
+      let pos = 0;
+      function parsePrimary() {
+        if (tokens[pos] && tokens[pos].type === "LPAREN") {
+          pos++; // consume '('
+          const expr = parseOr();
+          if (tokens[pos] && tokens[pos].type === "RPAREN") pos++; // consume ')'
+          return expr;
+        }
+        const field = tokens[pos++];
+        const op = tokens[pos++];
+        const val = tokens[pos++];
+        if (!field || !op || !val) throw new Error("Incomplete comparison expression.");
+        return {
+          type: "Comparison",
+          field: field.value,
+          operator: op.value,
+          value: val.value
         };
       }
-      const replayBtn = document.getElementById("replay-btn");
-      if (replayBtn) {
-        replayBtn.onclick = () => startGame(state.difficulty);
+      function parseAnd() {
+        let left = parsePrimary();
+        while (pos < tokens.length && tokens[pos].type === "AND") {
+          pos++;
+          const right = parsePrimary();
+          left = { type: "LogicalExpr", operator: "AND", left, right };
+        }
+        return left;
       }
+      function parseOr() {
+        let left = parseAnd();
+        while (pos < tokens.length && tokens[pos].type === "OR") {
+          pos++;
+          const right = parseAnd();
+          left = { type: "LogicalExpr", operator: "OR", left, right };
+        }
+        return left;
+      }
+      return tokens.length ? parseOr() : null;
+    }
+
+    function formatAsciiTree(node, prefix = "", isLeft = true) {
+      if (!node) return "";
+      if (node.type === "Comparison") {
+        const valStr = typeof node.value === "string" ? `"${node.value}"` : node.value;
+        return `${prefix}${isLeft ? "├── " : "└── "}[Comparison] ${node.field} ${node.operator} ${valStr}\n`;
+      }
+      let out = `${prefix}${prefix ? (isLeft ? "├── " : "└── ") : ""}[Boss: LogicalExpr (${node.operator})]\n`;
+      const nextPrefix = prefix + (prefix ? (isLeft ? "│   " : "    ") : "");
+      out += formatAsciiTree(node.left, nextPrefix, true);
+      out += formatAsciiTree(node.right, nextPrefix, false);
+      return out;
+    }
+
+    function renderPlaygroundView(container) {
+      container.innerHTML = `
+        <div class="page-container">
+          <div class="page-header">
+            <div>
+              <span class="badge">Interactive Sandbox · Up to AST Only (Steps 1–3)</span>
+              <h1 style="margin-top:6px;">⚡ Live Lexer → AST Org Chart Playground</h1>
+              <p style="color:var(--text-muted);">Type any rule below to watch <b>Step 1: The Lexer (Coin Sorter)</b> and <b>Step 3: The AST (Office Org Chart)</b> update live.</p>
+            </div>
+            <div>
+              <select class="week-select" id="preset-select">
+                ${PRESETS.map((p, i) => `<option value="${i}">${p.name}</option>`).join("")}
+              </select>
+            </div>
+          </div>
+
+          <div class="info-card" style="margin-bottom:20px;">
+            <h4>1. Enter Client Rule String (Supports AND, OR, Parentheses, Strings & Numbers)</h4>
+            <input type="text" id="pg-rule" class="input-field" value='${PRESETS[0].rule}' />
+          </div>
+
+          <div class="info-card" style="margin-bottom:20px;">
+            <h4>Step 1 Output: Lexer Tokens (🪙 Coin Sorter)</h4>
+            <div id="pg-tokens" style="margin-top:10px;"></div>
+          </div>
+
+          <div class="grid-2">
+            <div class="info-card">
+              <h4>Step 3 Visual Diagram: AST Office Org Chart</h4>
+              <div id="pg-ascii-tree" class="code-block" style="margin-top:10px; min-height:220px;"></div>
+            </div>
+            <div class="info-card">
+              <h4>Step 3 TypeScript JSON Structure (ASTNode)</h4>
+              <div id="pg-ast" class="code-block" style="margin-top:10px; max-height:280px;"></div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const runPipeline = () => {
+        const ruleStr = document.getElementById("pg-rule").value;
+        const tokenContainer = document.getElementById("pg-tokens");
+        const asciiContainer = document.getElementById("pg-ascii-tree");
+        const astContainer = document.getElementById("pg-ast");
+
+        try {
+          const tokens = tokenizeRule(ruleStr);
+          tokenContainer.innerHTML = tokens.map(t => `
+            <div class="token-chip">
+              <span class="t-val">${escapeHTML(String(t.value))}</span>
+              <span class="t-type">${t.type}</span>
+            </div>
+          `).join("");
+
+          const ast = buildASTFromTokens(tokens);
+          asciiContainer.textContent = formatAsciiTree(ast);
+          astContainer.textContent = JSON.stringify(ast, null, 2);
+        } catch (err) {
+          asciiContainer.textContent = `AST Incomplete: ${err.message}`;
+          astContainer.textContent = `// Waiting for complete comparison (FIELD OP VALUE)...`;
+        }
+      };
+
+      document.getElementById("pg-rule").oninput = runPipeline;
+      document.getElementById("preset-select").onchange = (e) => {
+        const p = PRESETS[Number(e.target.value)];
+        document.getElementById("pg-rule").value = p.rule;
+        runPipeline();
+      };
+
+      runPipeline();
+    }
+
+    /********************************************************************
+     * 8. VIEW 4: CLIENT PROJECT BRIEFS (SCOPED UP TO AST MILESTONE)
+     ********************************************************************/
+    function renderBriefsView(container) {
+      container.innerHTML = `
+        <div class="page-container">
+          <div class="page-header">
+            <div>
+              <span class="badge">Class Project Groups · Scoped Up to AST Milestone</span>
+              <h1 style="margin-top:6px;">📋 Client Project Briefs (Lexer & AST Deliverables)</h1>
+              <p style="color:var(--text-muted);">Each group builds a custom <b>Lexer (Tokenizer)</b>, <b>TypeScript Interfaces</b>, and <b>AST Org Chart</b> for their assigned client brief.</p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="info-card">
+              <h4>🛒 Group 1 — Brief 1: E-Commerce Product Filter</h4>
+              <p><b>The Client Ask:</b> "Our merchandising team wants to type custom promo rules like <code>price > 100 AND category = 'Electronics'</code>."</p>
+              <p style="margin-top:10px;"><b>Sample Fields:</b> <code>price</code>, <code>category</code>, <code>stock</code>, <code>rating</code>, <code>brand</code></p>
+              <p style="margin-top:6px;"><b>Midterm AST Deliverable:</b> Typed <code>lexer.ts</code> + <code>ast.ts</code> producing AST Org Charts for 5 product filter rules.</p>
+            </div>
+
+            <div class="info-card">
+              <h4>🏦 Group 2 — Brief 2: Loan & Scholarship Eligibility Checker</h4>
+              <p><b>The Client Ask:</b> "Our loan officers need to configure approval rules like <code>income >= 35000 AND creditScore >= 680</code>."</p>
+              <p style="margin-top:10px;"><b>Sample Fields:</b> <code>income</code>, <code>age</code>, <code>creditScore</code>, <code>employmentYears</code>, <code>gpa</code></p>
+              <p style="margin-top:6px;"><b>Midterm AST Deliverable:</b> Typed <code>lexer.ts</code> + <code>ast.ts</code> producing AST Org Charts for 5 applicant rules.</p>
+            </div>
+
+            <div class="info-card">
+              <h4>🧾 Group 3 — Brief 4: Invoice & Template Approval Generator</h4>
+              <p><b>The Client Ask:</b> "Accounting wants automated routing rules for incoming vendor invoices, e.g. <code>amount <= 5000 AND status = 'Approved'</code>."</p>
+              <p style="margin-top:10px;"><b>Sample Fields:</b> <code>amount</code>, <code>department</code>, <code>vendor</code>, <code>status</code>, <code>daysOverdue</code></p>
+              <p style="margin-top:6px;"><b>Midterm AST Deliverable:</b> Typed <code>lexer.ts</code> + <code>ast.ts</code> producing AST Org Charts for 5 invoice routing rules.</p>
+            </div>
+
+            <div class="info-card">
+              <h4>🧮 Brief 3: Dynamic Pricing & Formula Evaluator</h4>
+              <p><b>The Client Ask:</b> "Our B2B sales desk needs configurable discount triggers like <code>subtotal > 500 OR vipTier = 'Gold'</code>."</p>
+              <p style="margin-top:10px;"><b>Sample Fields:</b> <code>subtotal</code>, <code>quantity</code>, <code>vipTier</code>, <code>region</code>, <code>taxRate</code></p>
+              <p style="margin-top:6px;"><b>Midterm AST Deliverable:</b> Typed <code>lexer.ts</code> + <code>ast.ts</code> producing AST Org Charts for 5 pricing rules.</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /********************************************************************
+     * 9. VIEW 5: PRINTABLE EXAMS (STRICTLY PRELIM & MIDTERM AST ONLY)
+     ********************************************************************/
+    function renderQuizzesView(container) {
+      const showPaper = (term) => (selectedExamFilter === "all" || selectedExamFilter === term) ? "" : "hidden-exam";
+
+      container.innerHTML = `
+        <div class="page-container">
+          <div class="page-header no-print">
+            <div>
+              <span class="badge">Assessments · Scoped Strictly Up to AST</span>
+              <h1 style="margin-top:6px;">📝 Printable Prelim & Midterm (AST) Exam Papers</h1>
+              <p style="color:var(--text-muted);">Select an exam sheet below and click <b>Print / Save Blank Exam as PDF</b>.</p>
+            </div>
+          </div>
+
+          <div class="print-toolbar no-print">
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              <span style="font-weight:700; font-size:0.9rem; color:var(--accent);">📄 Select Exam Sheet:</span>
+              <select class="week-select" id="exam-filter-select">
+                <option value="all" ${selectedExamFilter === 'all' ? 'selected' : ''}>Both Exams (Prelim Lexer + Midterm TypeScript & AST)</option>
+                <option value="prelim" ${selectedExamFilter === 'prelim' ? 'selected' : ''}>Prelim Exam Only (Step 1: Lexer & JS Basics)</option>
+                <option value="midterm" ${selectedExamFilter === 'midterm' ? 'selected' : ''}>Midterm Exam Only (Step 2 & 3: TypeScript & AST Org Chart)</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" id="print-exams-btn">🖨️ Print / Save Blank Exam as PDF</button>
+          </div>
+
+          <div class="exam-sheets-wrapper">
+            <!-- 1. PRELIM EXAM PAPER -->
+            <section class="exam-paper ${showPaper('prelim')}" id="exam-prelim">
+              <div class="exam-header-top">
+                <div>
+                  <h2>PRELIM EXAMINATION — STEP 1: THE LEXER (TOKENIZER)</h2>
+                  <p>Programming Languages with Compiler · Instructor: Ron Hedwig · Week 3</p>
+                </div>
+                <div class="exam-score-box">SCORE: ____ / 100</div>
+              </div>
+
+              <div class="exam-meta-grid">
+                <div class="exam-meta-line"><span>Student Name:</span></div>
+                <div class="exam-meta-line"><span>Team / Client Brief:</span></div>
+                <div class="exam-meta-line"><span>Date:</span></div>
+              </div>
+
+              <div class="exam-section">
+                <h3>Part A · Trace Tokens by Hand (Paper · 40 pts)</h3>
+                <p class="exam-prompt">
+                  Act as the <b>Lexer (Coin Sorter)</b> and write out each token in left-to-right order, including its <code>type</code> label and <code>value</code>:
+                </p>
+                <div class="exam-code">Rule Input:   price >= 250 AND category = "Electronics"</div>
+                <table class="exam-table">
+                  <thead>
+                    <tr>
+                      <th style="width:12%;">Token #</th>
+                      <th style="width:44%;">Token Type Label (FIELD, GTE, NUMBER, AND, EQ, STRING)</th>
+                      <th style="width:44%;">Token Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>1</td><td></td><td></td></tr>
+                    <tr><td>2</td><td></td><td></td></tr>
+                    <tr><td>3</td><td></td><td></td></tr>
+                    <tr><td>4</td><td></td><td></td></tr>
+                    <tr><td>5</td><td></td><td></td></tr>
+                    <tr><td>6</td><td></td><td></td></tr>
+                    <tr><td>7</td><td></td><td></td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="exam-section">
+                <h3>Part B · JavaScript Fundamentals & Bug Fix (Paper · 30 pts)</h3>
+                <p class="exam-prompt">
+                  The hardcoded rule below always prints <code>"Matches!"</code> even when <code>category</code> is <code>"Books"</code>. Circle the bug and write the corrected line:
+                </p>
+                <div class="exam-code">let price = 150;\nlet category = "Books";\nif (price > 100 && category = "Electronics") {\n  console.log("Matches!");\n}</div>
+                <div class="exam-lined-area"><div class="exam-line"></div><div class="exam-line"></div></div>
+              </div>
+
+              <div class="exam-section">
+                <h3>Part C · Complete the Tokenizer Function (30 pts)</h3>
+                <p class="exam-prompt">
+                  Fill in the missing branch inside <code>tokenize(input)</code> so that it recognizes the <code>&gt;</code> operator, pushes <code>{ type: "GT", value: ">" }</code>, and advances <code>i</code>:
+                </p>
+                <div class="exam-code">function tokenize(input) {\n  const tokens = [];\n  let i = 0;\n  while (i < input.length) {\n    const char = input[i];\n    if (/\\s/.test(char)) { i++; continue; }\n    // YOUR CODE BELOW: Add the if-branch for ">"\n\n\n\n    i++;\n  }\n  return tokens;\n}</div>
+              </div>
+            </section>
+
+            <!-- 2. MIDTERM EXAM PAPER (STRICTLY TYPESCRIPT & AST ORG CHARTS) -->
+            <section class="exam-paper ${showPaper('midterm')}" id="exam-midterm">
+              <div class="exam-header-top">
+                <div>
+                  <h2>MIDTERM EXAMINATION — TYPESCRIPT & ABSTRACT SYNTAX TREES (AST)</h2>
+                  <p>Programming Languages with Compiler · Instructor: Ron Hedwig · Scoped Up to AST Only</p>
+                </div>
+                <div class="exam-score-box">SCORE: ____ / 100</div>
+              </div>
+
+              <div class="exam-meta-grid">
+                <div class="exam-meta-line"><span>Student Name:</span></div>
+                <div class="exam-meta-line"><span>Team / Client Brief:</span></div>
+                <div class="exam-meta-line"><span>Date:</span></div>
+              </div>
+
+              <div class="exam-section">
+                <h3>Part A · Draw the 2-Level & 3-Level AST Org Charts (Paper · 50 pts)</h3>
+                <p class="exam-prompt">
+                  1. (25 pts) Draw the 2-level <b>AST Office Org Chart</b> for the rule below. Label the Top Boss node (<code>LogicalExpr</code>) and the Left and Right Report nodes (<code>Comparison</code>):
+                </p>
+                <div class="exam-code">Rule 1:   income >= 35000 AND creditScore >= 680</div>
+                <div class="exam-draw-box" style="height:145px;">Draw 2-Level AST Org Chart here:</div>
+
+                <p class="exam-prompt">
+                  2. (25 pts) Remember that <b><code>AND</code> binds tighter (higher precedence) than <code>OR</code></b>. Draw the 3-level <b>AST Office Org Chart</b> for the rule below:
+                </p>
+                <div class="exam-code">Rule 2:   vip = "Gold" OR price > 100 AND stock > 0</div>
+                <div class="exam-draw-box" style="height:155px;">Draw 3-Level AST Org Chart here (Show Top Boss, Middle Manager, and Leaf Workers):</div>
+              </div>
+
+              <div class="exam-section">
+                <h3>Part B · TypeScript "Labeled Kitchen Jars" — Token & AST Interfaces (50 pts)</h3>
+                <p class="exam-prompt">
+                  Complete the TypeScript definitions below for <code>Token</code>, <code>ComparisonNode</code>, and recursive <code>LogicalExprNode</code>:
+                </p>
+                <div class="exam-code">export type TokenType = "FIELD" | "NUMBER" | "STRING" | "GT" | "GTE" | "EQ" | "AND" | "OR";
+
+// 1. Define interface Token (with type and value):
+
+
+
+// 2. Define interface ComparisonNode (with type: "Comparison", field, operator, value):
+
+
+
+// 3. Define interface LogicalExprNode (with type: "LogicalExpr", operator: "AND" | "OR", left, right):
+
+
+</div>
+              </div>
+            </section>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("exam-filter-select").onchange = (e) => {
+        selectedExamFilter = e.target.value;
+        renderQuizzesView(container);
+      };
+      document.getElementById("print-exams-btn").onclick = () => window.print();
+    }
+
+    /********************************************************************
+     * 10. VIEW 6: GUIDES & VISUAL ANALOGIES (STRICTLY UP TO AST ONLY)
+     ********************************************************************/
+    function renderGuidesView(container) {
+      container.innerHTML = `
+        <div class="page-container">
+          <div class="page-header">
+            <div>
+              <span class="badge">Core Course Metaphors · Weeks 1–4 (Up to AST Only)</span>
+              <h1 style="margin-top:6px;">🧭 Visual Analogies: From Raw Text to AST Org Chart</h1>
+              <p style="color:var(--text-muted);">Every concept up to Midterms maps to an everyday real-world object.</p>
+            </div>
+          </div>
+
+          <div class="grid-3">
+            <div class="info-card">
+              <h4>🪙 Step 1: The Lexer = A Coin Sorter</h4>
+              <p>A mechanical coin sorter takes a messy handful of change and drops quarters, dimes, and nickels into labeled trays (<code>FIELD</code>, <code>GT</code>, <code>NUMBER</code>, <code>STRING</code>). It does <b>not</b> know who is in charge yet — it only outputs a flat row of labeled tokens.</p>
+            </div>
+            <div class="info-card">
+              <h4>🫙 Step 2: TypeScript = Labeled Kitchen Jars</h4>
+              <p>A kitchen jar labeled <code>"Sugar"</code> stops you from accidentally pouring in salt before you bake the cake. TypeScript union types (<code>TokenType</code>) and interfaces (<code>Token</code>, <code>ASTNode</code>) catch typos in your code editor before your program even runs.</p>
+            </div>
+            <div class="info-card">
+              <h4>🏢 Step 3: The AST = An Office Org Chart</h4>
+              <p>A flat list of tokens can't show hierarchy. An <b>Abstract Syntax Tree (AST)</b> arranges tokens into an Office Org Chart where a logical operator (<code>AND</code> / <code>OR</code>) is the Boss at the top and comparisons report underneath it.</p>
+            </div>
+          </div>
+
+          <div class="info-card" style="margin-top:24px;">
+            <h4>📐 Operator Precedence in the AST: Why <code>AND</code> Binds Tighter Than <code>OR</code></h4>
+            <div class="grid-2" style="margin-top:12px;">
+              <div class="code-block">Rule: vip = "Gold" OR price > 100 AND stock > 0
+
+        [ Top Boss: OR ]
+         /            \
+  vip = "Gold"    [ Middle Manager: AND ]
+                    /                 \
+              price > 100          stock > 0</div>
+              <div class="analogy-box">
+                <div class="analogy-label">PRECEDENCE vs. PARENTHESES</div>
+                <p style="font-size:0.95rem; line-height:1.55;">
+                  Just like multiplication happens before addition in math, <b><code>AND</code> groups its two comparisons together first</b> into a tight subtree (Middle Manager), leaving <code>OR</code> at the very top as the Root Boss.<br><br>
+                  If you add parentheses — <code>(vip = "Gold" OR price > 100) AND stock > 0</code> — the parentheses override precedence, forcing <code>OR</code> to become the Middle Manager and making <code>AND</code> the Top Boss!
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /********************************************************************
+     * 11. VIEW 7: INSTRUCTOR ANSWER KEYS (STRICTLY UP TO AST ONLY)
+     ********************************************************************/
+    function renderKeysView(container) {
+      if (!answerKeyUnlocked) {
+        container.innerHTML = `
+          <div class="page-container" style="text-align:center; padding-top:90px;">
+            <span class="badge">Instructor Only · Lexer, TypeScript & AST Solutions</span>
+            <h1 style="margin:14px 0;">🔒 Instructor Answer Key (Up to AST)</h1>
+            <p style="color:var(--text-muted); max-width:520px; margin:0 auto 24px;">
+              Hidden by default so you can share your screen in class without revealing Prelim or Midterm AST solutions.
+            </p>
+            <button class="btn btn-primary" id="unlock-keys-btn">🔓 Unlock Instructor Answer Key</button>
+          </div>
+        `;
+        document.getElementById("unlock-keys-btn").onclick = () => {
+          answerKeyUnlocked = true;
+          renderKeysView(container);
+        };
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="page-container">
+          <div class="page-header">
+            <div>
+              <span class="badge">Unlocked · Prelim & Midterm AST Reference Solutions</span>
+              <h1 style="margin-top:6px;">🔑 Reference Solutions: Lexer, TypeScript & AST</h1>
+            </div>
+            <button class="btn" id="lock-keys-btn">🔒 Lock Screen</button>
+          </div>
+
+          <div class="grid-2">
+            <div class="info-card">
+              <h4>1. Reference Solution: TypeScript Tokenizer (<code>lexer.ts</code>)</h4>
+              <div class="code-block" style="margin-top:10px;">export type TokenType =
+  | "FIELD" | "NUMBER" | "STRING"
+  | "GT" | "LT" | "GTE" | "LTE" | "EQ" | "NEQ"
+  | "AND" | "OR" | "LPAREN" | "RPAREN";
+
+export interface Token {
+  type: TokenType;
+  value: string | number;
+}
+
+export function tokenize(input: string): Token[] {
+  const tokens: Token[] = [];
+  let i = 0;
+  while (i < input.length) {
+    if (/\\s/.test(input[i])) { i++; continue; }
+    // Check 2-char operators (>=, <=, !=, ==) BEFORE 1-char (>, <, =)
+    const two = input.slice(i, i + 2);
+    if (two === ">=") { tokens.push({ type: "GTE", value: ">=" }); i += 2; continue; }
+    if (input[i] === ">") { tokens.push({ type: "GT", value: ">" }); i++; continue; }
+    // Numbers, quoted strings, and identifiers (AND, OR, FIELD)
+    i++;
+  }
+  return tokens;
+}</div>
+            </div>
+
+            <div class="info-card">
+              <h4>2. Reference Solution: Recursive AST Types (<code>ast.ts</code>)</h4>
+              <div class="code-block" style="margin-top:10px;">export type ASTNode = LogicalExprNode | ComparisonNode;
+
+export interface ComparisonNode {
+  type: "Comparison";
+  field: string;
+  operator: string;
+  value: string | number;
+}
+
+export interface LogicalExprNode {
+  type: "LogicalExpr";
+  operator: "AND" | "OR";
+  left: ASTNode;   // Can hold a Comparison OR nested LogicalExpr!
+  right: ASTNode;
+}</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("lock-keys-btn").onclick = () => {
+        answerKeyUnlocked = false;
+        renderKeysView(container);
+      };
     }
 
     function escapeHTML(str) {
@@ -1712,8 +2470,8 @@
         .replace(/"/g, "&quot;");
     }
 
-    // Boot Arcade
-    renderStartScreen();
+    // Boot Application
+    handleRoute();
   </script>
 </body>
 </html>
